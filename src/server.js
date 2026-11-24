@@ -56,6 +56,7 @@ const app=express();
 app.disable('x-powered-by');
 app.set('trust proxy',1); // Render encerra TLS antes de encaminhar ao Node.
 app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'",VELTRIX_CSS_HASH],imgSrc:["'self'",'https://cdn.discordapp.com'],connectSrc:["'self'"],fontSrc:["'self'"],formAction:["'self'"],frameAncestors:["'none'"],objectSrc:["'none'"],baseUri:["'self'"]}}}));
+app.use('/assets',express.static(join(import.meta.dirname,'assets'),{maxAge:'7d',immutable:true,fallthrough:false}));
 app.use(express.urlencoded({extended:false,limit:'16kb'}));
 app.get('/healthz', (_req,res)=>res.json({ok:true,panel:'Render',botOnline:connected()}));
 app.get('/api/status', (_req,res)=>res.set('Cache-Control','no-store').json({online:connected(),servers:connected()?bridge.guilds.size:0,backend:'Render+KataBump'}));
@@ -99,7 +100,37 @@ app.use(session({store:new FileStore({path:sessionDir,ttl:60*60*24,retries:1}),n
 const limiter=rateLimit({windowMs:15*60*1000,limit:90,standardHeaders:'draft-7',legacyHeaders:false});
 app.use('/auth',limiter);app.use('/dashboard',limiter);
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
-app.get('/',(req,res)=>res.set('Cache-Control','no-store').send(page('Início', `${loginBanner()}<div class="landing"><div class="tagline">✦ A PRÓXIMA ERA DA VELTRIX</div><h1>Seu servidor.<br/><span class="gradient-text">Seu universo.</span></h1><p>Gerencie canais, cargos, permissões, embeds, tickets e Inteligência Artificial pelo navegador. <strong>${connected()?`🟢 Veltrix conectada em ${bridge.guilds.size} servidor(es).`:'🟠 Aguardando sincronização do bot no KataBump.'}</strong></p><a class="btn btn-large" href="${req.session.user?'/dashboard':'/auth/login'}">✦ Abrir meu painel ↗</a><div class="preview"><span>🏗️ Estrutura</span><span>🛡️ Permissões</span><span>🎨 Identidade local</span><span>✉️ Embeds</span></div></div>`,{user:req.session.user})));
+app.get('/',(req,res)=>{
+  const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Aguardando sincronização do bot';
+  const dashboard=req.session.user?'/dashboard':'/auth/login';
+  const features=[
+    ['🏗️','Estrutura','Crie canais, categorias e organize o seu servidor do seu jeito.'],
+    ['🛡️','Cargos & permissões','Personalize o acesso com controles específicos por servidor.'],
+    ['✉️','Embeds & templates','Mensagens visuais e estruturas prontas para sua comunidade.'],
+    ['🎫','Tickets','Atendimento com categorias, painéis e transcrições.'],
+    ['✦','Identidade local','Avatar e apelido exclusivos da Veltrix em cada servidor.'],
+    ['🤖','Inteligência artificial','Uma assistente integrada à administração do servidor.']
+  ];
+  const cards=features.map(([emoji,title,desc])=>`<a class="vel-feature" href="${dashboard}"><span class="vel-feature-icon">${emoji}</span><strong>${title}</strong><small>${desc}</small></a>`).join('');
+  const html=`${loginBanner()}<div class="landing">
+    <section class="vel-hero">
+      <div class="vel-copy"><div class="vel-kicker">✦ SUA COMUNIDADE, SEU UNIVERSO</div>
+        <h1>Seu servidor.<span class="gradient-text"><br>Seu universo.</span></h1>
+        <p>Conheça a Veltrix: uma assistente com personalidade própria para organizar canais, cargos, permissões e criar experiências incríveis para sua comunidade.</p>
+        <div class="vel-online"><span class="vel-pulse"></span>${esc(status)}</div>
+        <div class="vel-actions"><a class="btn btn-large" href="${dashboard}">✦ Abrir meu painel ↗</a><a class="vel-secondary" href="#recursos">Explorar recursos ↓</a></div>
+      </div>
+      <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
+        <div class="vel-aura"></div><div class="vel-orbit"></div>
+        <img class="vel-mascot" src="/assets/veltrix-mascot.webp" width="1024" height="1536" alt="Veltrix, personagem original anime de cabelo laranja e uniforme turquesa, branco e dourado" fetchpriority="high">
+        <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Cores, cargos e <b>criatividade</b></span>
+      </div>
+    </section>
+    <section id="recursos" aria-labelledby="recursos-titulo"><div class="vel-section-title"><div class="vel-kicker">✦ CRIE DO SEU JEITO</div><h2 id="recursos-titulo">Tudo sob seu controle</h2><p>Personalize cada servidor com ferramentas práticas e a identidade única da Veltrix.</p></div><div class="vel-features">${cards}</div></section>
+    <section class="vel-lower-cta"><div><h2>Seu servidor merece mais.</h2><p>Entre com Discord para abrir o painel e escolher seu servidor.</p></div><a class="btn btn-large" href="${dashboard}">Começar agora ↗</a></section>
+  </div>`;
+  return res.set('Cache-Control','no-store').send(page('Início',html,{user:req.session.user}));
+});
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
