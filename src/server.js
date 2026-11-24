@@ -56,7 +56,7 @@ const app=express();
 app.disable('x-powered-by');
 app.set('trust proxy',1); // Render encerra TLS antes de encaminhar ao Node.
 app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'",VELTRIX_CSS_HASH],imgSrc:["'self'",'https://cdn.discordapp.com'],connectSrc:["'self'"],fontSrc:["'self'"],formAction:["'self'"],frameAncestors:["'none'"],objectSrc:["'none'"],baseUri:["'self'"]}}}));
-app.use('/assets',express.static(join(import.meta.dirname,'assets'),{maxAge:'7d',immutable:true,fallthrough:false}));
+app.use('/assets',express.static(join(import.meta.dirname,'assets'),{maxAge:'10m',immutable:false,fallthrough:false}));
 app.use(express.urlencoded({extended:false,limit:'16kb'}));
 app.get('/healthz', (_req,res)=>res.json({ok:true,panel:'Render',botOnline:connected()}));
 app.get('/api/status', (_req,res)=>res.set('Cache-Control','no-store').json({online:connected(),servers:connected()?bridge.guilds.size:0,backend:'Render+KataBump'}));
@@ -122,7 +122,7 @@ app.get('/',(req,res)=>{
       </div>
       <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
         <div class="vel-aura"></div><div class="vel-orbit"></div>
-        <img class="vel-mascot" src="/assets/veltrix-mascot.webp" width="1024" height="1536" alt="Veltrix, personagem original anime de cabelo laranja e uniforme turquesa, branco e dourado" fetchpriority="high">
+        <img class="vel-mascot" src="/assets/veltrix-mascot-recortada-v22.webp" width="1024" height="1536" alt="Veltrix, personagem original anime de cabelo laranja e uniforme turquesa, branco e dourado" fetchpriority="high">
         <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Cores, cargos e <b>criatividade</b></span>
       </div>
     </section>
