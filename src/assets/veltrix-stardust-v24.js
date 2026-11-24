@@ -15,7 +15,15 @@
   const rand=(a,b)=>a+Math.random()*(b-a);
   const spriteCache=new Map();
   let width=0,height=0,dpr=1,stars=[],last=0,raf=0;
-  let enabled=!mq.matches,previousScroll=window.scrollY||0,scrollImpulse=0;
+  // Start with the correct image before loading any animation, so the mascot
+  // never plays a few GIF frames and then abruptly switches to a still.
+  // An explicit choice overrides the OS reduced-motion preference.
+  function savedChoice(){
+    try{return localStorage.getItem('veltrix-animation-setting');}catch{return null;}
+  }
+  const explicitChoice=savedChoice();
+  let enabled=explicitChoice==='on'?true:explicitChoice==='off'?false:!mq.matches;
+  let scrollImpulse=0;
   let lastScroll=window.scrollY||0;
   let resizeRequested=false;
   // Sprite glows are cached; each particle is moved independently per frame.
@@ -99,17 +107,22 @@
   const button=document.createElement('button');
   button.className='vel-motion-toggle';button.type='button';
   button.setAttribute('aria-label','Ativar ou pausar animações de fundo e da mascote');
-  function setEnabled(on){
+  function setEnabled(on,remember=false){
     enabled=Boolean(on);document.body.dataset.velMotion=enabled?'on':'off';
-    button.textContent=enabled?'✦ Efeitos: ligados':'✦ Efeitos: pausados';
+    button.textContent=enabled?'✦ Animação: ligada':(mq.matches?'✦ Ativar animação (movimento reduzido)':'✦ Ativar animação');
     button.setAttribute('aria-pressed',String(enabled));
-    if(mascot){const next=enabled?mascot.dataset.animated:mascot.dataset.still;
-      if(next && !mascot.src.endsWith(next))mascot.src=next;}
+    if(remember){try{localStorage.setItem('veltrix-animation-setting',enabled?'on':'off');}catch{}}
+    if(mascot){
+      const next=enabled?mascot.dataset.animated:mascot.dataset.still;
+      // Only replace src when needed: changing it repeatedly restarts the GIF.
+      const activePath=new URL(mascot.src,location.href).pathname;
+      if(next && activePath!==next)mascot.src=next;
+    }
     if(raf)cancelAnimationFrame(raf);raf=0;
     last=performance.now();paint(0,last);
     if(enabled && !document.hidden)raf=requestAnimationFrame(tick);
   }
-  button.addEventListener('click',()=>setEnabled(!enabled));
+  button.addEventListener('click',()=>setEnabled(!enabled,true));
   if(document.body.classList.contains('landing-page'))document.body.append(button);
   function onScroll(){
     const y=window.scrollY||0;
@@ -127,6 +140,6 @@
     if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}
     else if(enabled){last=performance.now();raf=requestAnimationFrame(tick);}
   });
-  if(mq.addEventListener)mq.addEventListener('change',e=>setEnabled(!e.matches));
+  if(mq.addEventListener)mq.addEventListener('change',e=>{if(savedChoice()===null)setEnabled(!e.matches);});
   resize();onScroll();setEnabled(enabled);
 })();
