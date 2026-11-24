@@ -104,29 +104,29 @@ app.get('/',(req,res)=>{
   const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Aguardando sincronização do bot';
   const dashboard=req.session.user?'/dashboard':'/auth/login';
   const features=[
-    ['🏗️','Estrutura','Crie canais, categorias e organize o seu servidor do seu jeito.'],
-    ['🛡️','Cargos & permissões','Personalize o acesso com controles específicos por servidor.'],
-    ['✉️','Embeds & templates','Mensagens visuais e estruturas prontas para sua comunidade.'],
-    ['🎫','Tickets','Atendimento com categorias, painéis e transcrições.'],
-    ['✦','Identidade local','Avatar e apelido exclusivos da Veltrix em cada servidor.'],
-    ['🤖','Inteligência artificial','Uma assistente integrada à administração do servidor.']
+    ['🎫','Tickets','Organize atendimentos com canais privados, equipe e transcrições.'],
+    ['👋','Boas-vindas','Receba os membros com mensagens no seu estilo.'],
+    ['📜','Logs','Acompanhe eventos do servidor em um canal reservado.'],
+    ['🤝','Parcerias','Gerencie pedidos, revisões e anúncios.'],
+    ['🔐','Permissões','Ajuste visibilidade e envio de mensagens por cargo.'],
+    ['🌟','Identidade da Veltrix','Avatar e apelido exclusivos para cada servidor.']
   ];
   const cards=features.map(([emoji,title,desc])=>`<a class="vel-feature" href="${dashboard}"><span class="vel-feature-icon">${emoji}</span><strong>${title}</strong><small>${desc}</small></a>`).join('');
   const html=`${loginBanner()}<div class="landing">
     <section class="vel-hero">
       <div class="vel-copy"><div class="vel-kicker">✦ SUA COMUNIDADE, SEU UNIVERSO</div>
         <h1>Seu servidor.<span class="gradient-text"><br>Seu universo.</span></h1>
-        <p>Conheça a Veltrix: uma assistente com personalidade própria para organizar canais, cargos, permissões e criar experiências incríveis para sua comunidade.</p>
+        <p>Conheça a Veltrix: seu painel para cuidar dos tickets, boas-vindas, logs, permissões e personalização de cada servidor.</p>
         <div class="vel-online"><span class="vel-pulse"></span>${esc(status)}</div>
         <div class="vel-actions"><a class="btn btn-large" href="${dashboard}">✦ Abrir meu painel ↗</a><a class="vel-secondary" href="#recursos">Explorar recursos ↓</a></div>
       </div>
       <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
         <div class="vel-aura"></div><div class="vel-orbit"></div>
         <img class="vel-mascot" src="/assets/veltrix-mascot-recortada-v22.webp" width="1024" height="1536" alt="Veltrix, personagem original anime de cabelo laranja e uniforme turquesa, branco e dourado" fetchpriority="high">
-        <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Cores, cargos e <b>criatividade</b></span>
+        <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Seu servidor, seu <b>estilo</b></span>
       </div>
     </section>
-    <section id="recursos" aria-labelledby="recursos-titulo"><div class="vel-section-title"><div class="vel-kicker">✦ CRIE DO SEU JEITO</div><h2 id="recursos-titulo">Tudo sob seu controle</h2><p>Personalize cada servidor com ferramentas práticas e a identidade única da Veltrix.</p></div><div class="vel-features">${cards}</div></section>
+    <section id="recursos" aria-labelledby="recursos-titulo"><div class="vel-section-title"><div class="vel-kicker">✦ CRIE DO SEU JEITO</div><h2 id="recursos-titulo">Tudo sob seu controle</h2><p>Gerencie os sistemas essenciais de cada servidor com a identidade única da Veltrix.</p></div><div class="vel-features">${cards}</div></section>
     <section class="vel-lower-cta"><div><h2>Seu servidor merece mais.</h2><p>Entre com Discord para abrir o painel e escolher seu servidor.</p></div><a class="btn btn-large" href="${dashboard}">Começar agora ↗</a></section>
   </div>`;
   return res.set('Cache-Control','no-store').send(page('Início',html,{user:req.session.user}));
@@ -252,22 +252,11 @@ app.post('/dashboard/:id/action/:action',logged,guard,checkCsrf,(req,res)=>{
       return res.redirect(`/dashboard/${req.guild.id}/${V2_ACTION_SECTION[action]}?queued=1`);
     }catch(e){return errorRedirect(res,req.guild.id,V2_ACTION_SECTION[action],safeError(e.message));}
   }
-  const sections={'create-channel':'ferramentas','create-role':'ferramentas','send-embed':'ferramentas','ticket-panel':'tickets','partner-panel':'parcerias'};
-  if(!sections[action])return res.status(404).send('Ação inexistente.');
+  const sections={'ticket-panel':'tickets','partner-panel':'parcerias'};
+  if(!sections[action])return res.status(404).send('Ação indisponível no painel.');
   try{
-    const required={'create-channel':0x10n,'create-role':0x10000000n,'send-embed':0x800n,'ticket-panel':0x20n,'partner-panel':0x20n}[action];
-    if(!userGuildPermission(req.oauthGuild,required))throw Error('Sua conta não tem a permissão específica para esta ação.');
-    let payload={};
-    if(action==='create-channel'){
-      const name=String(req.body.name||'').trim();if(!/^[\p{L}\p{N}_ -]{2,80}$/u.test(name))throw Error('Nome de canal inválido.');payload={name};
-    }else if(action==='create-role'){
-      const name=String(req.body.name||'').trim(),color=String(req.body.color||'').trim();
-      if(!/^[\p{L}\p{N}_ -]{2,80}$/u.test(name)||!/^#[a-f0-9]{6}$/i.test(color))throw Error('Nome ou cor do cargo inválidos.');payload={name,color};
-    }else if(action==='send-embed'){
-      const channel=String(req.body.channel||''),title=String(req.body.title||'').trim(),description=String(req.body.description||'').trim();
-      if(!req.guild.channels.cache.has(channel)||!title||!description||title.length>240||description.length>3800)throw Error('Canal, título ou descrição inválidos.');
-      payload={channel,title,description};
-    }
+    if(!userGuildPermission(req.oauthGuild,0x20n))throw Error('Sua conta não pode administrar esse servidor.');
+    const payload={};
     queueJob(req.guild.id,req.session.user.id,'action',payload,action);
     return res.redirect(`/dashboard/${req.guild.id}/${sections[action]}?queued=1`);
   }catch(e){return errorRedirect(res,req.guild.id,sections[action],safeError(e.message));}
