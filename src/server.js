@@ -122,7 +122,7 @@ app.get('/',(req,res)=>{
       </div>
       <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
         <div class="vel-aura"></div><div class="vel-orbit"></div>
-        <img class="vel-mascot" src="/assets/veltrix-mascot-recortada-v22.webp" data-animated="/assets/veltrix-mascote-animada-v241-loop-infinito.gif" data-still="/assets/veltrix-mascot-recortada-v22.webp" width="362" height="482" alt="Mascote Veltrix de anime com cabelo laranja e roupa turquesa, animada com movimento suave" fetchpriority="high">
+        <img class="vel-mascot" src="/assets/veltrix-mascote-animada-v241-loop-infinito.gif" data-animated="/assets/veltrix-mascote-animada-v241-loop-infinito.gif" data-still="/assets/veltrix-mascot-recortada-v22.webp" width="362" height="482" alt="Mascote Veltrix de anime com cabelo laranja e roupa turquesa, animada com movimento suave" fetchpriority="high">
         <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Seu servidor, seu <b>estilo</b></span>
       </div>
     </section>
