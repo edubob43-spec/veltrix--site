@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ChannelType } from 'discord.js';
+import { page, sectionHtml, validSettings, safeId } from '../src/ui.js';
+import { DEFAULT_SETTINGS } from '../src/defaults.js';
+const gid='123456789012345678';
+const cid='123456789012345679';
+const guild={id:gid,name:'Teste',memberCount:3,stats:{xpProfiles:2,ticketsOpen:1,giveawaysActive:0},
+  channels:{cache:new Map([[cid,{id:cid,name:'geral',type:ChannelType.GuildText,guild:{id:gid},isTextBased(){return true;}}]])},
+  roles:{cache:new Map()}};
+test('HTML entrega CSS embutido (correção de 2026)',()=>assert.match(page('Veltrix','oi'),/<style>:root\{/));
+test('o HTML inclui config específica de servidor',()=>assert.match(sectionHtml(guild,DEFAULT_SETTINGS,'tickets','csrf',{}),new RegExp(`/dashboard/${gid}/save/tickets`)));
+test('valida canal correto',()=>assert.equal(validSettings('boasvindas',{welcomeEnabled:'on',welcomeChannelId:cid,welcomeMessage:'Olá'},guild).welcomeChannelId,cid));
+test('rejeita prefixo inválido',()=>assert.throws(()=>validSettings('aparencia',{prefix:'/',embedColor:'#aabbcc'},guild),/Prefixo/));
+test('ID de servidor precisa ser snowflake',()=>{assert.equal(safeId(gid),true);assert.equal(safeId('../etc/passwd'),false);});
