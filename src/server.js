@@ -9,6 +9,8 @@ import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ChannelType } from 'discord.js';
+import multer from 'multer';
+import { V2_ACTION_SECTION, V2_PERMISSIONS, validateV2Action } from './v2-contract.js';
 import { DEFAULT_SETTINGS } from './defaults.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
@@ -97,7 +99,7 @@ app.use(session({store:new FileStore({path:sessionDir,ttl:60*60*24,retries:1}),n
 const limiter=rateLimit({windowMs:15*60*1000,limit:90,standardHeaders:'draft-7',legacyHeaders:false});
 app.use('/auth',limiter);app.use('/dashboard',limiter);
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
-app.get('/',(req,res)=>res.set('Cache-Control','no-store').send(page('Início', `${loginBanner()}<div class="landing"><div class="tagline">✦ A PRÓXIMA ERA DA VELTRIX</div><h1>Seu servidor.<br/><span class="gradient-text">Seu universo.</span></h1><p>Gerencie tickets, moderação, boas-vindas e Inteligência Artificial pelo navegador. <strong>${connected()?`🟢 Veltrix conectada em ${bridge.guilds.size} servidor(es).`:'🟠 Aguardando sincronização do bot no KataBump.'}</strong></p><a class="btn btn-large" href="${req.session.user?'/dashboard':'/auth/login'}">✦ Abrir meu painel ↗</a><div class="preview"><span>🛡️ Moderação</span><span>🎫 Tickets</span><span>🤖 IA</span><span>🏗️ Gerenciamento</span></div></div>`,{user:req.session.user})));
+app.get('/',(req,res)=>res.set('Cache-Control','no-store').send(page('Início', `${loginBanner()}<div class="landing"><div class="tagline">✦ A PRÓXIMA ERA DA VELTRIX</div><h1>Seu servidor.<br/><span class="gradient-text">Seu universo.</span></h1><p>Gerencie canais, cargos, permissões, embeds, tickets e Inteligência Artificial pelo navegador. <strong>${connected()?`🟢 Veltrix conectada em ${bridge.guilds.size} servidor(es).`:'🟠 Aguardando sincronização do bot no KataBump.'}</strong></p><a class="btn btn-large" href="${req.session.user?'/dashboard':'/auth/login'}">✦ Abrir meu painel ↗</a><div class="preview"><span>🏗️ Estrutura</span><span>🛡️ Permissões</span><span>🎨 Identidade local</span><span>✉️ Embeds</span></div></div>`,{user:req.session.user})));
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
@@ -185,8 +187,40 @@ app.post('/dashboard/:id/save/:section',logged,guard,checkCsrf,(req,res)=>{
     return res.redirect(`/dashboard/${req.guild.id}/${req.params.section}?queued=1`);
   }catch(e){return errorRedirect(res,req.guild.id,req.params.section,safeError(e.message));}
 });
+// Avatar é recebido como multipart, com tamanho limitado; não é salvo no Render.
+const avatarUpload=multer({
+  storage:multer.memoryStorage(),limits:{fileSize:512*1024,files:1,fields:2},
+  fileFilter:(_req,file,cb)=>cb(null,['image/png','image/jpeg','image/webp'].includes(file.mimetype))
+});
+const imageType=(b)=>{
+  if(b.length>=8&&b.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')))return 'image/png';
+  if(b.length>=3&&b.subarray(0,3).equals(Buffer.from('ffd8ff','hex')))return 'image/jpeg';
+  if(b.length>=12&&b.subarray(0,4).toString()==='RIFF'&&b.subarray(8,12).toString()==='WEBP')return 'image/webp';
+  return null;
+};
+app.post('/dashboard/:id/action/v2-avatar',logged,guard,(req,res,next)=>{
+  avatarUpload.single('avatar')(req,res,e=>{
+    if(e)return errorRedirect(res,req.guild.id,'identidade','Arquivo inválido ou maior que 512 KB.');
+    next();
+  });
+},checkCsrf,(req,res)=>{
+  try{
+    if(!userGuildPermission(req.oauthGuild,0x20n))throw Error('Sem permissão Gerenciar Servidor.');
+    if(!req.file?.buffer||!imageType(req.file.buffer))throw Error('Envie uma imagem PNG, JPEG ou WebP válida.');
+    queueJob(req.guild.id,req.session.user.id,'action',{image:req.file.buffer.toString('base64'),type:imageType(req.file.buffer)},'v2-avatar');
+    return res.redirect(`/dashboard/${req.guild.id}/identidade?queued=1`);
+  }catch(e){return errorRedirect(res,req.guild.id,'identidade',safeError(e.message));}
+});
 app.post('/dashboard/:id/action/:action',logged,guard,checkCsrf,(req,res)=>{
   const action=req.params.action;
+  if(V2_ACTION_SECTION[action]){
+    try{
+      if(!userGuildPermission(req.oauthGuild,V2_PERMISSIONS[action]))throw Error('Sem a permissão necessária para esta ação.');
+      const payload=validateV2Action(action,req.body,req.guild);
+      queueJob(req.guild.id,req.session.user.id,'action',payload,action);
+      return res.redirect(`/dashboard/${req.guild.id}/${V2_ACTION_SECTION[action]}?queued=1`);
+    }catch(e){return errorRedirect(res,req.guild.id,V2_ACTION_SECTION[action],safeError(e.message));}
+  }
   const sections={'create-channel':'ferramentas','create-role':'ferramentas','send-embed':'ferramentas','ticket-panel':'tickets','partner-panel':'parcerias'};
   if(!sections[action])return res.status(404).send('Ação inexistente.');
   try{
