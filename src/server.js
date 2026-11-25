@@ -12,6 +12,8 @@ import { ChannelType } from 'discord.js';
 import multer from 'multer';
 import { V2_ACTION_SECTION, V2_PERMISSIONS, validateV2Action } from './v2-contract.js';
 import { DEFAULT_SETTINGS } from './defaults.js';
+import { cleanProfile, ownedBadges } from './profile-contract.js';
+import { renderProfileEditor } from './profile-editor.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
@@ -38,13 +40,14 @@ const constantSecretMatch = (provided, expected) => {
 const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
-const bridge = { guilds:new Map(), jobs:new Map(), results:new Map(), lastSeen:0, botOnline:false };
+const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), lastSeen:0, botOnline:false };
 // Pedidos de sincronização HTTPS aguardando novos trabalhos.
 // Ao salvar uma configuração, acordamos o bot imediatamente.
 const bridgeWaiters = new Set();
 const notifyBridge = () => { for (const wake of [...bridgeWaiters]) wake(); };
 const connected = () => bridge.botOnline && Date.now()-bridge.lastSeen < 120000;
 const queueJob = (guildId, userId, type, payload, action='') => {
+  if(type==='profile-settings' && [...bridge.jobs.values()].some(j=>j.type===type && j.userId===userId))throw Error('Você já tem uma atualização de perfil em andamento. Aguarde a sincronização.');
   if ([...bridge.jobs.values()].filter(j=>j.guildId===guildId).length >= 25) throw Error('Fila desse servidor lotada. Tente novamente depois.');
   const id=randomUUID();
   bridge.jobs.set(id,{id,guildId,userId,type,action,payload,createdAt:Date.now()});
@@ -83,6 +86,14 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
       stats:raw.stats||{},settings:sanitizedSettings});
   }
   bridge.guilds=next;
+  // The bot is the durable source of each user's personal preferences.
+  if(req.body.profiles && typeof req.body.profiles==='object' && !Array.isArray(req.body.profiles)) {
+    const entries=Object.entries(req.body.profiles);
+    if(entries.length<=4000) for(const [uid,raw] of entries) {
+      if(!safeId(uid) || bridge.profilePending.has(uid))continue;
+      try {bridge.profiles.set(uid,cleanProfile(raw));} catch {}
+    }
+  }
   bridge.botOnline=!!req.body.botOnline;
   bridge.lastSeen=Date.now();
   const acked=[];
@@ -90,9 +101,13 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     if(!completed?.id || !/^[\w-]{36}$/.test(completed.id))continue;
     acked.push(completed.id);
     const job=bridge.jobs.get(completed.id);
-    if(job){bridge.results.set(job.guildId,{ok:!!completed.ok,error:safeError(completed.error),at:Date.now(),action:job.action||job.type});bridge.jobs.delete(job.id);}
+    if(job){
+      if(job.type==='profile-settings')bridge.profilePending.delete(job.userId);
+      bridge.results.set(job.type==='profile-settings'?`profile:${job.userId}`:job.guildId,{ok:!!completed.ok,error:safeError(completed.error),at:Date.now(),action:job.action||job.type});bridge.jobs.delete(job.id);
+    }
   }
   for(const job of bridge.jobs.values())if(Date.now()-job.createdAt>30*60*1000)bridge.jobs.delete(job.id);
+  for(const [uid,created] of bridge.profilePending)if(Date.now()-created>35*60*1000)bridge.profilePending.delete(uid);
   for(const [key,info] of bridge.results)if(Date.now()-info.at>60*60*1000)bridge.results.delete(key);
   // Long polling: uma única requisição HTTPS fica aguardando até surgir uma ação,
   // evitando o intervalo fixo de 15-30 segundos da V2.5.
@@ -123,7 +138,7 @@ const sessionDir=join(tmpdir(),'veltrix-render-sessions');mkdirSync(sessionDir,{
 const FileStore=FileStoreFactory(session);
 app.use(session({store:new FileStore({path:sessionDir,ttl:60*60*24,retries:1}),name:'veltrix.render.sid',secret:sessionSecret||randomBytes(48).toString('hex'),resave:false,saveUninitialized:false,rolling:true,cookie:{httpOnly:true,sameSite:'lax',secure:true,maxAge:24*60*60*1000}}));
 const limiter=rateLimit({windowMs:15*60*1000,limit:90,standardHeaders:'draft-7',legacyHeaders:false});
-app.use('/auth',limiter);app.use('/dashboard',limiter);
+app.use('/auth',limiter);app.use('/dashboard',limiter);app.use('/me',limiter);
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
 app.get('/',(req,res)=>{
   const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Aguardando sincronização do bot';
@@ -185,7 +200,7 @@ app.get('/auth/callback',async(req,res)=>{
     req.session.regenerate(e=>{
       if(e)return res.status(500).send('Erro ao iniciar a sessão.');
       req.session.oauth={accessToken:token.access_token,refreshToken:token.refresh_token,expiresAt:Date.now()+(token.expires_in||3600)*1000};
-      req.session.user={id:user.id,username:user.username,global_name:user.global_name,avatar:user.avatar};
+      req.session.user={id:user.id,username:user.username,global_name:user.global_name,avatar:user.avatar,public_flags:Number(user.public_flags||0)};
       req.session.csrf=randomBytes(24).toString('hex');
       req.session.save(err=>err?res.status(500).send('Erro ao salvar login.'):res.redirect('/dashboard'));
     });
@@ -258,6 +273,42 @@ async function guildsFor(req){
   }
   throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
 }
+// Perfil individual: cada pessoa edita SOMENTE o próprio usuário autenticado.
+// Não exige Gerenciar Servidor e nunca permite trocar userId pelo formulário.
+async function personalFlags(req){
+  if(Number.isInteger(req.session.user?.public_flags))return req.session.user.public_flags;
+  try {
+    const r=await fetch('https://discord.com/api/v10/users/@me',{
+      headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:AbortSignal.timeout(7000)});
+    if(r.ok){const info=await r.json();req.session.user.public_flags=Number(info.public_flags||0);return req.session.user.public_flags;}
+  }catch{}
+  return 0;
+}
+app.get('/me/perfil',logged,async(req,res)=>{
+  const uid=req.session.user.id;
+  const flags=await personalFlags(req);
+  const last=bridge.results.get(`profile:${uid}`)||{};
+  const msg=req.query.queued?'Sua escolha foi enviada à Veltrix. Aguarde a confirmação do bot.':
+    req.query.error?String(req.query.error).slice(0,140):
+    last.action==='profile-settings' && Date.now()-last.at<180000 ? (last.ok?'Última personalização aplicada no bot.':'A última personalização falhou: '+last.error):'';
+  const content=renderProfileEditor({user:req.session.user,settings:bridge.profiles.get(uid),flags,csrf:req.session.csrf,connected:connected(),message:msg});
+  res.set('Cache-Control','no-store').send(page('Meu perfil',content,{user:req.session.user}));
+});
+app.post('/me/perfil',logged,checkCsrf,async(req,res)=>{
+  if(!connected())return res.status(503).send(page('Sincronização pendente','<div class="alert">Aguarde a reconexão da Veltrix no KataBump antes de salvar.</div><a class="btn" href="/me/perfil">Voltar ao editor</a>',{user:req.session.user}));
+  try{
+    const flags=await personalFlags(req);
+    const all=ownedBadges(flags).map(b=>b.id);
+    const selected=req.body.badge===undefined?[]:Array.isArray(req.body.badge)?req.body.badge:[req.body.badge];
+    if(selected.length>5 || selected.some(b=>!all.includes(String(b))))throw Error('Selecione no máximo 5 insígnias que pertencem à sua conta.');
+    const pref=cleanProfile({theme:req.body.theme,banner:req.body.banner,badges:selected});
+    const uid=req.session.user.id;
+    queueJob('',uid,'profile-settings',pref);
+    bridge.profiles.set(uid,pref);
+    bridge.profilePending.set(uid,Date.now());
+    return res.redirect('/me/perfil?queued=1');
+  }catch(e){return res.redirect('/me/perfil?error='+encodeURIComponent(safeError(e.message)));}
+});
 app.get('/dashboard',logged,async(req,res)=>{
   try{
     const list=await guildsFor(req);
