@@ -12,6 +12,7 @@ import { ChannelType } from 'discord.js';
 import multer from 'multer';
 import { V2_ACTION_SECTION, V2_PERMISSIONS, validateV2Action } from './v2-contract.js';
 import { DEFAULT_SETTINGS } from './defaults.js';
+import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
 // Render = HTTPS + OAuth; KataBump = bot e armazenamento definitivo.
@@ -122,7 +123,7 @@ app.get('/',(req,res)=>{
       </div>
       <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
         <div class="vel-aura"></div><div class="vel-orbit"></div>
-        <img class="vel-mascot" src="/assets/veltrix-mascote-animada-v241-loop-infinito.gif" data-animated="/assets/veltrix-mascote-animada-v241-loop-infinito.gif" data-still="/assets/veltrix-mascot-recortada-v22.webp" width="362" height="482" alt="Mascote Veltrix de anime com cabelo laranja e roupa turquesa, animada com movimento suave" fetchpriority="high">
+        <img class="vel-mascot" src="/assets/veltrix-mascote-animada-v24.gif" data-animated="/assets/veltrix-mascote-animada-v24.gif" data-still="/assets/veltrix-mascot-recortada-v22.webp" width="362" height="482" alt="Mascote Veltrix de anime com cabelo laranja e roupa turquesa, animada com movimento suave" fetchpriority="high">
         <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Seu servidor, seu <b>estilo</b></span>
       </div>
     </section>
@@ -159,7 +160,7 @@ app.get('/auth/callback',async(req,res)=>{
     }finally{clearTimeout(timer);}
     req.session.regenerate(e=>{
       if(e)return res.status(500).send('Erro ao iniciar a sessão.');
-      req.session.oauth={accessToken:token.access_token,expiresAt:Date.now()+(token.expires_in||3600)*1000};
+      req.session.oauth={accessToken:token.access_token,refreshToken:token.refresh_token,expiresAt:Date.now()+(token.expires_in||3600)*1000};
       req.session.user={id:user.id,username:user.username,global_name:user.global_name,avatar:user.avatar};
       req.session.csrf=randomBytes(24).toString('hex');
       req.session.save(err=>err?res.status(500).send('Erro ao salvar login.'):res.redirect('/dashboard'));
@@ -167,14 +168,71 @@ app.get('/auth/callback',async(req,res)=>{
   }catch(e){console.warn('[OAuth Render]',safeError(e.message));res.status(502).send('Erro ao finalizar login do Discord. Tente novamente.');}
 });
 app.get('/auth/logout',(req,res)=>req.session.destroy(()=>{res.clearCookie('veltrix.render.sid');res.redirect('/');}));
-const logged=(req,res,next)=>req.session.user&&req.session.oauth&&req.session.oauth.expiresAt>Date.now()?next():res.redirect('/auth/login');
+// V2.5.1: um access token do Discord costuma vencer após ~1 h.
+// Renovamos antes do vencimento para não perder alterações durante o uso do painel.
+// Um refresh por sessão de cada vez evita disputar refresh tokens rotativos.
+const refreshInFlight = new Map();
+const persistSession = req => new Promise((resolve, reject) =>
+  req.session.save(err => err ? reject(err) : resolve()));
+async function refreshSessionToken(req) {
+  if (!req.session?.oauth?.refreshToken) return false;
+  const sessionId=req.sessionID;
+  let pending=refreshInFlight.get(sessionId);
+  if (!pending) {
+    pending=refreshDiscordOAuth(req.session.oauth,{clientId,clientSecret});
+    refreshInFlight.set(sessionId,pending);
+    // A limpeza ocorre também em caso de erro, sem gerar rejeição não tratada.
+    void pending.then(
+      ()=>{if(refreshInFlight.get(sessionId)===pending)refreshInFlight.delete(sessionId);},
+      ()=>{if(refreshInFlight.get(sessionId)===pending)refreshInFlight.delete(sessionId);}
+    );
+  }
+  const renewed=await pending;
+  req.session.oauth=renewed;
+  await persistSession(req);
+  return true;
+}
+async function ensureOAuth(req,{force=false}={}) {
+  if(!req.session?.user || !req.session.oauth) return false;
+  if (!force && !tokenNeedsRefresh(req.session.oauth)) return true;
+  if (!req.session.oauth.refreshToken) return false; // sessões antigas: login único necessário
+  try { return await refreshSessionToken(req); }
+  catch(e) {
+    console.warn('[OAuth refresh]',safeError(e.message));
+    // Em falha temporária de rede, ainda podemos usar um token não vencido.
+    if (!force && req.session.oauth?.accessToken && req.session.oauth.expiresAt>Date.now()) return true;
+    if (e.status===400 || e.status===401) return false;
+    const err=new Error('O Discord está temporariamente indisponível. Tente novamente.');
+    err.status=503;
+    throw err;
+  }
+}
+function logged(req,res,next){
+  ensureOAuth(req).then(ok=>{
+    if(ok) return next();
+    if(req.method==='GET')return res.redirect('/auth/login');
+    return res.status(401).send(page('Sessão expirada',
+      '<div class="alert">Sua sessão expirou. Nenhuma alteração foi enviada. Entre com Discord novamente e repita a operação.</div><a class="btn" href="/auth/login">Entrar novamente</a>'));
+  }).catch(e=>res.status(e.status||503).send(page('Discord indisponível',
+    '<div class="alert">Não foi possível renovar o login agora. Tente novamente em alguns instantes.</div>')));
+}
 async function guildsFor(req){
-  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);
-  try{
-    const r=await fetch('https://discord.com/api/v10/users/@me/guilds',{headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:ctl.signal});
-    if(!r.ok)throw Error(`Discord guilds HTTP ${r.status}`);
-    return (await r.json()).filter(authorized);
-  }finally{clearTimeout(timer);}
+  // A API pode revogar o token antes do horário informado. Revalida uma vez se retornar 401.
+  for (let attempt=0;attempt<2;attempt++){
+    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);
+    try{
+      const r=await fetch('https://discord.com/api/v10/users/@me/guilds',
+        {headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:ctl.signal});
+      if(r.status===401 && attempt===0) {
+        if(!await ensureOAuth(req,{force:true}))throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
+        continue;
+      }
+      if(r.status===401)throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
+      if(!r.ok)throw Object.assign(Error(`Discord guilds HTTP ${r.status}`),{status:r.status});
+      return (await r.json()).filter(authorized);
+    }finally{clearTimeout(timer);}
+  }
+  throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
 }
 app.get('/dashboard',logged,async(req,res)=>{
   try{
@@ -185,7 +243,7 @@ app.get('/dashboard',logged,async(req,res)=>{
       return `<a class="servercard" href="${link}"><span class="serveravatar">${esc(g.name[0]||'V')}</span><div><strong>${esc(g.name)}</strong><small>${inside?'● Veltrix conectada':'+ Convidar Veltrix'}</small></div><span>→</span></a>`;
     }).join('')||'<p>Você não administra nenhum servidor disponível.</p>'}</div>`;
     res.set('Cache-Control','no-store').send(page('Servidores',content,{user:req.session.user}));
-  }catch(e){res.status(401).send(page('Sessão',`<div class="alert">${esc(safeError(e.message))}</div><a class="btn" href="/auth/login">Entrar novamente</a>`));}
+  }catch(e){res.status(e.status===401?401:503).send(page('Conexão com Discord',`<div class="alert">${e.status===401?'Seu login expirou. Entre novamente.':'Não foi possível consultar o Discord agora. Tente atualizar em alguns instantes.'}</div><a class="btn" href="${e.status===401?'/auth/login':'/dashboard'}">${e.status===401?'Entrar novamente':'Tentar de novo'}</a>`));}
 });
 async function guard(req,res,next){
   if(!safeId(req.params.id))return res.status(400).send('Servidor inválido.');
@@ -196,7 +254,10 @@ async function guard(req,res,next){
     const g=(await guildsFor(req)).find(g=>g.id===req.params.id);
     if(!g)return res.status(403).send('Sem permissão Gerenciar Servidor.');
     req.guild=makeGuild(raw);req.oauthGuild=g;req.guildData=raw;next();
-  }catch(e){res.status(401).send('Login expirou ou Discord indisponível. Entre novamente.');}
+  }catch(e){
+    if(e.status===401)return res.status(401).send('Sua sessão do Discord expirou. Entre novamente para continuar.');
+    return res.status(503).send('Não foi possível consultar o Discord agora. Tente novamente sem perder suas configurações.');
+  }
 }
 function checkCsrf(req,res,next){
   const actual=String(req.body.csrf||''),expected=req.session.csrf||'';
