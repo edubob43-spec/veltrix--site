@@ -39,11 +39,16 @@ const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
 const bridge = { guilds:new Map(), jobs:new Map(), results:new Map(), lastSeen:0, botOnline:false };
+// Pedidos de sincronização HTTPS aguardando novos trabalhos.
+// Ao salvar uma configuração, acordamos o bot imediatamente.
+const bridgeWaiters = new Set();
+const notifyBridge = () => { for (const wake of [...bridgeWaiters]) wake(); };
 const connected = () => bridge.botOnline && Date.now()-bridge.lastSeen < 120000;
 const queueJob = (guildId, userId, type, payload, action='') => {
   if ([...bridge.jobs.values()].filter(j=>j.guildId===guildId).length >= 25) throw Error('Fila desse servidor lotada. Tente novamente depois.');
   const id=randomUUID();
   bridge.jobs.set(id,{id,guildId,userId,type,action,payload,createdAt:Date.now()});
+  notifyBridge();
   return id;
 };
 const makeGuild = (raw) => {
@@ -60,7 +65,7 @@ app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptS
 app.use('/assets',express.static(join(import.meta.dirname,'assets'),{maxAge:'10m',immutable:false,fallthrough:false}));
 app.use(express.urlencoded({extended:false,limit:'16kb'}));
 app.get('/healthz', (_req,res)=>res.json({ok:true,panel:'Render',botOnline:connected()}));
-app.get('/api/status', (_req,res)=>res.set('Cache-Control','no-store').json({online:connected(),servers:connected()?bridge.guilds.size:0,backend:'Render+KataBump'}));
+app.get('/api/status', (_req,res)=>res.set('Cache-Control','no-store').json({online:connected(),servers:connected()?bridge.guilds.size:0,backend:'Render+KataBump',bridgeConfigured:bridgeReady(),lastSyncSeconds:bridge.lastSeen?Math.floor((Date.now()-bridge.lastSeen)/1000):null}));
 
 // O bot do KataBump abre uma conexão HTTPS para buscar solicitações feitas no painel.
 // Este endpoint não está disponível aos usuários autenticados pelo Discord.
@@ -89,8 +94,27 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
   }
   for(const job of bridge.jobs.values())if(Date.now()-job.createdAt>30*60*1000)bridge.jobs.delete(job.id);
   for(const [key,info] of bridge.results)if(Date.now()-info.at>60*60*1000)bridge.results.delete(key);
-  const jobs=[...bridge.jobs.values()].slice(0,20);
-  res.set('Cache-Control','no-store').json({jobs,acked});
+  // Long polling: uma única requisição HTTPS fica aguardando até surgir uma ação,
+  // evitando o intervalo fixo de 15-30 segundos da V2.5.
+  // Render responde ao final de no máximo 18 segundos para atualizar o heartbeat.
+  let timeout;
+  let replied=false;
+  const reply = () => {
+    if (replied || res.destroyed) return;
+    replied=true;
+    clearTimeout(timeout);
+    bridgeWaiters.delete(reply);
+    res.set('Cache-Control','no-store').json({jobs:[...bridge.jobs.values()].slice(0,20),acked});
+  };
+  res.on('close',()=>{
+    replied=true;
+    clearTimeout(timeout);
+    bridgeWaiters.delete(reply);
+  });
+  if (bridge.jobs.size) return reply();
+  bridgeWaiters.add(reply);
+  timeout=setTimeout(reply,18000);
+  timeout.unref?.();
 });
 
 if(!oauthReady())console.warn('[Render] Configure PUBLIC_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET e SESSION_SECRET para usar OAuth.');
@@ -237,7 +261,7 @@ async function guildsFor(req){
 app.get('/dashboard',logged,async(req,res)=>{
   try{
     const list=await guildsFor(req);
-    const content=`<div class="heading"><div class="eyebrow">SELECIONE O SERVIDOR</div><h1>Seu espaço de <span class="gradient-text">controle.</span></h1><p>Somente servidores em que você tem permissão Gerenciar Servidor.</p></div>${!connected()?'<div class="alert">Aguardando conexão da Veltrix no KataBump. O login funciona, mas as configurações ficam indisponíveis até o bot sincronizar.</div>':''}<div class="server-grid">${list.map(g=>{
+    const content=`<div class="heading"><div class="eyebrow">SELECIONE O SERVIDOR</div><h1>Seu espaço de <span class="gradient-text">controle.</span></h1><p>Somente servidores em que você tem permissão Gerenciar Servidor.</p></div>${!connected()?'<div class="alert">Reconectando a Veltrix no KataBump… Este painel atualizará automaticamente quando o bot responder.</div><script defer src="/assets/veltrix-sync-refresh-v26.js"></script>':''}<div class="server-grid">${list.map(g=>{
       const inside=bridge.guilds.has(g.id);
       const link=inside?`/dashboard/${g.id}/geral`:`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&permissions=${BOT_PERMISSIONS}&scope=bot%20applications.commands&guild_id=${g.id}`;
       return `<a class="servercard" href="${link}"><span class="serveravatar">${esc(g.name[0]||'V')}</span><div><strong>${esc(g.name)}</strong><small>${inside?'● Veltrix conectada':'+ Convidar Veltrix'}</small></div><span>→</span></a>`;
