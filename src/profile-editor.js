@@ -111,6 +111,38 @@ export const PROFILE_EDITOR_CSS = `
 .pc-house-badge{display:block;width:27px;height:27px;object-fit:contain;flex:none}
 .pc-badge-emblem .pc-house-badge{width:30px;height:30px}
 .pc-badge-option:has(.pc-house-badge){min-height:44px}
+
+/* V5.3 • Layout limpo solicitado: sem barra VELTRIX, insígnias livres, casamento no canto direito. */
+.pc-card{clip-path:none!important}
+.pc-card-banner{height:196px;background-position:center;}
+.pc-avatar-row{min-height:120px;gap:13px;align-items:center;margin-top:-38px;margin-right:20px;}
+.pc-name-col{flex:1 1 auto;min-width:0;padding-top:38px;}
+.pc-nickname{font-size:clamp(18px,2vw,27px)}
+.pc-badge-tray{display:flex;flex:0 0 auto;justify-content:flex-end;align-self:flex-end;align-items:center;gap:7px;margin:0 0 21px;flex-wrap:nowrap;min-height:38px}
+.pc-badge-emblem{width:32px;height:34px;display:grid;place-items:center;background:transparent;border:0;border-radius:0;box-shadow:none;color:var(--accent2)}
+.pc-badge-emblem svg{height:27px;width:27px}
+.pc-badge-emblem .pc-house-badge{height:31px;width:31px}
+.pc-empty-badges{font-size:10px;white-space:nowrap}
+.pc-meta-row{display:flex;justify-content:flex-end;align-items:center;padding:12px 19px 0;}
+.pc-wedding{flex:0 1 49%;min-height:62px;max-width:410px;justify-content:flex-start;}
+.pc-theme-cyber .pc-avatar-row{border-bottom:0}
+@media(max-width:650px){
+ .pc-card-banner{height:125px}
+ .pc-avatar-row{margin:-27px 12px 0;min-height:100px;align-items:center;gap:8px}
+ .pc-avatar-ring{height:74px;flex-basis:74px;border-width:3px}
+ .pc-name-col{padding-top:28px}
+ .pc-nickname{font-size:18px}
+ .pc-compact-xp{font-size:9px;gap:3px}
+ .pc-level{font-size:9px;padding:2px 3px}
+ .pc-badge-tray{gap:1px;margin-bottom:12px;min-height:25px}
+ .pc-badge-emblem{width:23px;height:25px}
+ .pc-badge-emblem svg,.pc-badge-emblem .pc-house-badge{width:22px;height:22px}
+ .pc-meta-row{flex-direction:row;justify-content:flex-end;align-items:center;padding:9px 12px 0}
+ .pc-wedding{width:62%;min-height:50px;max-width:none;flex:0 1 62%;padding:7px 9px}
+ .pc-wedding small{font-size:9px}.pc-wedding strong{font-size:12px}
+ .pc-bio{margin:11px 12px 13px}
+}
+
 `;
 
 function themeChoice(t,selected){
@@ -143,11 +175,10 @@ export function renderProfileEditor({user, settings={}, flags=0, csrf, connected
  </form>
  <div class="pc-preview-col"><div class="pc-preview-title"><strong>PRÉVIA DO CARTÃO</strong><span class="pc-live">● Ao alterar, atualiza aqui</span></div>
   <div class="pc-card pc-theme-${esc(pref.theme)}" id="pc-card"><div class="pc-card-surface">
-   <div class="pc-card-header"><span class="pc-card-brand">VELTRI<b>X</b></span><span class="pc-card-bars" aria-hidden="true"><i></i><i></i><i></i></span></div>
    <div id="pc-banner" class="pc-card-banner pr-banner-${esc(pref.banner)}" role="img" aria-label="Banner selecionado"></div>
-   <div class="pc-avatar-row"><span class="pc-avatar-ring"><img src="${esc(avatarUrl(user))}" alt="Seu avatar Discord"></span><div class="pc-name-col"><div class="pc-nickname">${nickname}</div><div class="pc-compact-xp"><span class="pc-level">Nv. 9</span><span>978/1000 XP</span></div></div></div>
+   <div class="pc-avatar-row"><span class="pc-avatar-ring"><img src="${esc(avatarUrl(user))}" alt="Seu avatar Discord"></span><div class="pc-name-col"><div class="pc-nickname">${nickname}</div><div class="pc-compact-xp"><span class="pc-level">Nv. 9</span><span>978/1000 XP</span></div></div><div class="pc-badge-tray" id="pc-badge-tray">${badgeHtml}</div></div>
    <div class="pc-accent-line" aria-hidden="true"></div>
-   <div class="pc-meta-row"><div class="pc-wedding"><span class="pc-heart">♡</span><span><small>Casamento</small><strong>Veltrix</strong></span></div><div class="pc-badge-tray" id="pc-badge-tray">${badgeHtml}</div></div>
+   <div class="pc-meta-row"><div class="pc-wedding"><span class="pc-heart">♡</span><span><small>Casamento</small><strong>Veltrix</strong></span></div></div>
    <div class="pc-bio"><div class="pc-bio-label">◇ SOBRE MIM</div><p id="pc-bio-preview">${esc(bio)||'Sua descrição vai aparecer aqui…'}</p><span class="pc-decor-corner" aria-hidden="true"></span></div>
   </div></div>
   <div class="pc-preview-note">O nome será o <b>apelido usado no servidor</b>. Nível, XP, casamento e avatar serão os dados reais no Discord. A prévia usa valores de exemplo apenas para mostrar o visual. Não inclui conquistas nem barra de XP.</div>
