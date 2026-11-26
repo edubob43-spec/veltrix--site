@@ -1,7 +1,7 @@
 // Identical validation contract on Render and KataBump.
 // Public flags, not invented badges. Discord does not expose every profile badge.
 export const BANNERS = Object.freeze([
-  { id: 'cyber', name: 'Anime Neon', tone: 'Azul elétrico' },
+  { id: 'cyber', name: 'Anime Azul', tone: 'Azul elétrico' },
   { id: 'todas', name: 'De todas', tone: 'Laranja & preto' },
   { id: 'anjo', name: 'Loves Money', tone: 'Dark minimal' },
   { id: 'minecraft', name: 'Mundo em blocos', tone: 'Verde aventureiro' },
@@ -10,11 +10,11 @@ export const BANNERS = Object.freeze([
   { id: 'regua', name: 'Na régua', tone: 'Urbano' }
 ]);
 export const THEMES = Object.freeze([
-  { id:'cyber', name:'Cyber Anime', accent:'#FF3BEB', secondary:'#00E5FF', bg:'#100C26' },
-  { id:'neon', name:'Violeta Neon', accent:'#C17BFF', secondary:'#AA7CFF', bg:'#120D21' },
-  { id:'ambar', name:'Âmbar', accent:'#FFAD66', secondary:'#F46BA9', bg:'#191018' },
-  { id:'glacial', name:'Glacial', accent:'#72E7DE', secondary:'#7AA6FF', bg:'#091C23' },
-  { id:'noir', name:'Noir', accent:'#D8D8E4', secondary:'#9FA9C4', bg:'#101118' }
+  { id:'cyber', name:'Exclusive', accent:'#FF3BEB', secondary:'#00E5FF', bg:'#100C26' },
+  { id:'neon', name:'Premium Roxo', accent:'#C17BFF', secondary:'#AA7CFF', bg:'#120D21' },
+  { id:'ambar', name:'Street Laranja', accent:'#FFAD66', secondary:'#F46BA9', bg:'#191018' },
+  { id:'glacial', name:'Retro Community', accent:'#72E7DE', secondary:'#7AA6FF', bg:'#091C23' },
+  { id:'noir', name:'Anime Azul', accent:'#D8D8E4', secondary:'#9FA9C4', bg:'#101118' }
 ]);
 // Only stable, publicly exposed Discord UserFlags. Other cosmetic profile badges
 // (e.g. certain quests/collectibles) are not promised as readable via OAuth.

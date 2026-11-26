@@ -25,66 +25,81 @@ const BADGE_ICONS = {
 function badgeIcon(id){return `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${BADGE_ICONS[id]||BADGE_ICONS.active}</svg>`;}
 
 export const PROFILE_EDITOR_CSS = `
-/* Veltrix Profile V4: editable, CSS-based Cyber Anime interface, not a static mockup. */
-.my-profile{max-width:1480px;margin:0 auto;color:#f8f3ff}
-.pc-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 24px}
-.pc-eyebrow{font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:#76eefa;font-weight:900}
-.pc-heading h1{font-size:clamp(28px,3.4vw,42px);line-height:1.1;margin:6px 0 7px;letter-spacing:-.035em;font-weight:950}
-.pc-heading p{font-size:13px;margin:0;color:#b5aaca;line-height:1.65}
-.pc-grid{display:grid;grid-template-columns:minmax(330px,.85fr) minmax(390px,1.15fr);gap:22px;align-items:start}
-.pc-editor{background:linear-gradient(143deg,#1f1339 0%,#130b25 65%,#0a1020 100%);border:1px solid #b76cff5e;border-radius:18px;box-shadow:0 10px 40px #0005,0 0 30px #952bf01a;overflow:hidden;min-width:0}
-.pc-editor-head{padding:18px 20px 16px;border-bottom:1px solid #ffffff19;background:linear-gradient(90deg,#49208c30,transparent);display:flex;align-items:center;gap:10px}
-.pc-editor-head-icon{display:grid;place-items:center;color:#110d20;font-size:22px;background:linear-gradient(140deg,#14eaff,#f13bff);width:40px;height:40px;border-radius:10px;font-weight:900}
-.pc-editor-head strong{display:block;font-size:16px}.pc-editor-head small{font-size:11px;color:#c6b2d8}
-.pc-field-group{padding:19px 19px 4px}.pc-field-title{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;font-weight:900;letter-spacing:.04em;margin:0 0 12px}.pc-field-title small{font-size:11px;letter-spacing:0;color:#b8aaca;font-weight:500}
-.pc-field-title::before{content:'◆';color:#17e5ff;margin-right:-5px}
+/* V5: layouts estruturais inspirados nos exemplos enviados. Sem neon ou bordas luminosas. */
+.my-profile{max-width:1450px;margin:0 auto;color:#faf7ff}
+.pc-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:0 0 23px}
+.pc-eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#d3c0ec;font-weight:800}
+.pc-heading h1{font-size:clamp(30px,3.4vw,43px);line-height:1.1;margin:7px 0 10px;letter-spacing:-.03em;font-weight:850}
+.pc-heading p{color:#b8aec8;font-size:13px;margin:0;max-width:680px;line-height:1.65}
+.pc-grid{display:grid;grid-template-columns:minmax(340px,.86fr) minmax(390px,1.14fr);gap:24px;align-items:start}
+.pc-editor{background:#191526;border:1px solid #403651;border-radius:16px;overflow:hidden;min-width:0;box-shadow:0 15px 32px #05030b3a}
+.pc-editor-head{display:flex;align-items:center;gap:13px;background:#251b37;padding:21px;border-bottom:1px solid #423458}
+.pc-editor-head-icon{font-size:21px;display:grid;place-items:center;background:#7c60ad;border-radius:9px;width:39px;height:39px}
+.pc-editor-head strong{display:block;font-size:17px}.pc-editor-head small{font-size:11px;color:#c6bbd7}
+.pc-field-group{padding:19px 20px 2px}.pc-field-title{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 12px}.pc-field-title small{color:#afa3c2;font-size:11px;font-weight:500}
 .pc-theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.pc-choice{display:block;position:relative;cursor:pointer;min-width:0}.pc-choice>input{position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}.pc-choice>span{display:block;background:#080c1c9c;border:1px solid #a782c83f;border-radius:12px;padding:10px;transition:.16s ease;min-height:67px}
-.pc-choice:hover>span{transform:translateY(-2px);border-color:#d94af8}.pc-choice input:focus-visible+span{outline:3px solid #28ebfd;outline-offset:2px}.pc-choice input:checked+span{border-color:#20e7ff;box-shadow:0 0 0 1px #24e7ff80,0 0 23px #d735fc4a;background:#25123a}
-.pc-choice-name{display:flex;justify-content:space-between;gap:7px;align-items:center;margin-top:6px;font-size:12px;font-weight:850}.pc-choice-checked{color:#17e6fa;opacity:0}.pc-choice input:checked+span .pc-choice-checked{opacity:1}
-.pc-swatch{display:block;height:24px;border-radius:6px;background:linear-gradient(95deg,#16102c,#20dfff,#ed29f4);border:1px solid #ffffff37}
-.pc-swatch-neon{background:linear-gradient(100deg,#2b144c,#9e70ff,#b868ec)}.pc-swatch-ambar{background:linear-gradient(100deg,#311223,#f69d4e,#f656a5)}.pc-swatch-glacial{background:linear-gradient(100deg,#0c1f32,#13dfdf,#5895fa)}.pc-swatch-noir{background:linear-gradient(100deg,#080a12,#7a8198,#d6dde9)}
-.pc-banner-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pc-banner-options .pc-choice>span{padding:5px;min-height:unset}.pc-banner-thumb{width:100%;aspect-ratio:1.95;display:block;object-fit:cover;border-radius:7px}.pc-banner-title{font-size:10px;font-weight:850;display:block;padding:6px 3px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-badge-options{display:flex;flex-wrap:wrap;gap:8px}.pc-badge-option{display:flex;align-items:center;gap:8px;border-radius:11px;border:1px solid #ffffff30;background:#0a0b20;padding:9px 10px;cursor:pointer;position:relative;font-size:11px;color:#dfd1f0}.pc-badge-option input{accent-color:#1deaff;position:relative;width:15px;height:15px}.pc-badge-option:has(input:checked){border-color:#de4cff;background:#381c55}.pc-badge-option svg{color:#23ddf5}
-.pc-bio-input{width:100%;resize:vertical;min-height:88px;max-height:175px;background:#070a1b;color:#f4eaff;border:1px solid #b48cfa55;border-radius:11px;padding:12px;outline:0;font:inherit;font-size:12px}.pc-bio-input:focus{border-color:#19e9fc;box-shadow:0 0 0 3px #19e9fc22}.pc-count{display:block;text-align:right;color:#b5a9c6;font-size:11px;margin:5px 0}
-.pc-actions{margin-top:18px;padding:18px 20px;display:flex;align-items:center;gap:10px;border-top:1px solid #ffffff1a;flex-wrap:wrap}.pc-actions small{font-size:11px;color:#aaa0bc}.pc-actions .btn{background:linear-gradient(108deg,#17e5fb,#ef3ef4);color:#160d26;box-shadow:0 4px 24px #e02fff46}
-.pc-preview-col{position:sticky;top:20px;min-width:0}.pc-preview-title{display:flex;align-items:center;justify-content:space-between;color:#d3bddf;font-size:12px;letter-spacing:.06em;margin-bottom:10px}.pc-live{font-size:11px;color:#82f1ce;font-weight:850;letter-spacing:0}
-.pc-card{--pc-a:#ef3af3;--pc-b:#12e7f8;--pc-base:#0b0a1c;--pc-h:#1b1334;position:relative;overflow:hidden;border-radius:18px;padding:7px;background:linear-gradient(125deg,var(--pc-a),var(--pc-b) 30%,var(--pc-base) 50%,var(--pc-a) 79%,var(--pc-b));box-shadow:0 19px 55px #0009,0 0 31px #b734f442;transition:background .2s}
-.pc-card::before{content:'';position:absolute;inset:0;background:linear-gradient(95deg,transparent 0%,#ffffff18 46%,transparent 48%);pointer-events:none}
-.pc-card-surface{position:relative;border-radius:13px;background:linear-gradient(135deg,var(--pc-h),var(--pc-base) 65%);overflow:hidden}
-.pc-theme-neon{--pc-a:#c67aff;--pc-b:#8c68f7;--pc-base:#110d22;--pc-h:#21123e}
-.pc-theme-ambar{--pc-a:#ffad4d;--pc-b:#f15ba2;--pc-base:#140a1b;--pc-h:#2a132d}
-.pc-theme-glacial{--pc-a:#12e8e8;--pc-b:#78adff;--pc-base:#071a29;--pc-h:#082d3b}
-.pc-theme-noir{--pc-a:#c4d0e0;--pc-b:#929aaa;--pc-base:#10131e;--pc-h:#1a1e2a}
-.pc-card-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;gap:10px;position:relative;min-height:40px;background:linear-gradient(95deg,#11101e,#231439)}
-.pc-card-brand{font-size:14px;font-weight:1000;font-style:italic;letter-spacing:.07em;color:#fff;text-shadow:0 0 12px var(--pc-a)}.pc-card-brand b{color:var(--pc-b)}
-.pc-card-bars{display:flex;gap:4px;transform:skewX(-20deg)}.pc-card-bars i{display:block;width:15px;height:7px;background:var(--pc-b);box-shadow:0 0 8px var(--pc-b)}
-.pc-card-banner{height:142px;position:relative;background:linear-gradient(100deg,#1f6bd4,#13e8ff);background-size:cover;background-position:center;isolation:isolate}
-.pc-card-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#00102d03,#02031918 60%,#050518a8);z-index:1}
-.pc-card-banner::before{content:'';position:absolute;inset:0;border-bottom:4px solid var(--pc-b);box-shadow:inset 0 1px 0 #ffffff55;z-index:2}
-.pc-card-banner.pr-banner-cyber{background-image:url('/assets/profile-banners/cyber.webp')}
-.pc-card-banner.pr-banner-todas{background-image:url('/assets/profile-banners/todas.webp')}
-.pc-card-banner.pr-banner-anjo{background-image:url('/assets/profile-banners/anjo.webp')}
-.pc-card-banner.pr-banner-minecraft{background-image:url('/assets/profile-banners/minecraft.webp')}
-.pc-card-banner.pr-banner-santuario{background-image:url('/assets/profile-banners/santuario.webp')}
-.pc-card-banner.pr-banner-tropa{background-image:url('/assets/profile-banners/tropa.webp')}
-.pc-card-banner.pr-banner-regua{background-image:url('/assets/profile-banners/regua.webp')}
-.pc-avatar-row{display:flex;align-items:center;gap:14px;position:relative;margin:-43px 13px 0;padding:0 0 9px;z-index:3;min-height:119px}
-.pc-avatar-ring{flex:0 0 100px;height:100px;padding:5px;border-radius:50%;background:linear-gradient(130deg,var(--pc-a),var(--pc-b),var(--pc-a));box-shadow:0 0 0 4px #0d0b20,0 0 25px var(--pc-a)}
-.pc-avatar-ring img{width:90px;height:90px;border-radius:50%;object-fit:cover;background:#343747}
-.pc-name-col{padding:43px 0 0;min-width:0;flex:1}.pc-nickname{font-size:clamp(17px,2.1vw,29px);font-weight:1000;letter-spacing:-.035em;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-.pc-compact-xp{display:flex;gap:9px;align-items:center;color:#d8cadd;font-size:11px;margin-top:7px;flex-wrap:wrap}
-.pc-level{border:1px solid var(--pc-b);padding:3px 7px;border-radius:7px;background:#03091bbb;color:var(--pc-b);font-weight:850}.pc-compact-xp span:last-child{font-weight:800}
-.pc-accent-line{height:3px;margin:0 13px;background:linear-gradient(90deg,var(--pc-a),var(--pc-b),transparent);border-radius:2px;box-shadow:0 0 11px var(--pc-a)}
-.pc-meta-row{padding:12px 15px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pc-wedding{display:flex;gap:8px;align-items:center;border:1px solid var(--pc-a);background:#0c0919cd;border-radius:8px;padding:9px 11px;min-width:0;flex:1;color:#f6e6ff;font-size:12px}.pc-wedding .pc-heart{color:var(--pc-a);font-size:18px}.pc-wedding small{color:#a9a5c6;display:block;font-size:10px}.pc-wedding strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-badge-tray{display:flex;gap:6px;min-height:42px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.pc-badge-emblem{width:35px;height:35px;border:1px solid var(--pc-a);border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#141125,#30124f);color:var(--pc-b);box-shadow:inset 0 0 10px #b833ff37,0 0 8px #d640fd38}
-.pc-empty-badges{color:#a6a1b6;font-size:11px;max-width:130px;line-height:1.3;text-align:right}
-.pc-bio{margin:12px 15px 15px;min-height:76px;background:linear-gradient(95deg,#0b1124b5,#231238b9);border:1px solid var(--pc-b);border-radius:9px;padding:11px 14px;position:relative}
-.pc-bio-label{font-size:11px;font-weight:950;color:var(--pc-b);letter-spacing:.06em}.pc-bio p{margin:5px 0 0;color:#d9cee8;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
-.pc-decor-corner{position:absolute;right:12px;bottom:5px;width:28px;height:7px;border-left:7px solid var(--pc-a);border-right:7px solid var(--pc-a);transform:skewX(-25deg);opacity:.8}
-.pc-preview-note{border:1px solid #a8a1d226;background:#ffffff08;padding:12px;border-radius:11px;font-size:11px;color:#ada9c6;line-height:1.6;margin-top:14px}
-@media(max-width:1200px){.pc-grid{grid-template-columns:1fr}.pc-preview-col{position:static;order:-1;max-width:850px}.pc-card{max-width:850px}}
-@media(max-width:550px){.pc-banner-options{grid-template-columns:repeat(2,1fr)}.pc-heading{align-items:flex-start;flex-direction:column}.pc-avatar-ring{flex-basis:77px;height:77px;padding:4px}.pc-avatar-ring img{width:69px;height:69px}.pc-avatar-row{margin-top:-31px;min-height:87px}.pc-name-col{padding-top:30px}.pc-nickname{font-size:19px}.pc-badge-tray{justify-content:flex-start}.pc-meta-row{align-items:flex-start}.pc-wedding{flex-basis:100%}.pc-card-banner{height:105px}.pc-editor-head{padding:14px}}
+.pc-choice{position:relative;display:block;cursor:pointer;min-width:0}.pc-choice>input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;width:100%;height:100%}
+.pc-choice>span{display:block;background:#100e1a;border:2px solid #40354c;border-radius:11px;padding:8px;transition:border-color .15s,background .15s;min-height:82px}
+.pc-choice:hover>span{border-color:#9d88bc}.pc-choice input:focus-visible+span{outline:3px solid #e9cf98;outline-offset:3px}
+.pc-choice input:checked+span{background:#27213a;border-color:#edba79}
+.pc-choice-name{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:12px;font-weight:800;margin-top:8px}.pc-choice-checked{color:#e7b86e;opacity:0}.pc-choice input:checked+span .pc-choice-checked{opacity:1}
+/* Each layout preview is drawn with geometry, not a simple gradient swatch. */
+.pc-swatch{height:39px;display:block;position:relative;overflow:hidden;border-radius:4px;background:#151322;border:1px solid #514a68}
+.pc-swatch::before{content:'';position:absolute;top:4px;left:5px;width:35%;height:30%;background:#4c4169;clip-path:polygon(0 0,100% 0,85% 100%,0 100%)}
+.pc-swatch::after{content:'';position:absolute;bottom:5px;left:5px;right:5px;height:13px;border-top:3px solid #6c5883;background:linear-gradient(90deg,#292338 55%,transparent 55%)}
+.pc-swatch-cyber{background:linear-gradient(155deg,#281742 0 52%,#131829 52%);border-color:#3bd2d9}
+.pc-swatch-cyber::before{background:#f5a333}.pc-swatch-cyber::after{border-color:#22cce0;background:linear-gradient(90deg,#f4a332 34%,#17172b 34%)}
+.pc-swatch-neon{background:linear-gradient(160deg,#291739 0 60%,#20112b 60%);border-color:#ce70bc}
+.pc-swatch-neon::before{background:#a662d5}.pc-swatch-neon::after{border-color:#be79df;background:linear-gradient(90deg,#54296c 50%,#21132c 50%)}
+.pc-swatch-ambar{background:linear-gradient(150deg,#2d2022 0 45%,#17131b 45%);border-color:#f4ae4a}
+.pc-swatch-ambar::before{background:#ef9b39}.pc-swatch-ambar::after{border-color:#ed9b3c;background:linear-gradient(90deg,#4c2f22 50%,#171319 50%)}
+.pc-swatch-glacial{background:#eff8ff;border-color:#4d99dc}.pc-swatch-glacial::before{background:#50aff2}.pc-swatch-glacial::after{border-color:#378fce;background:linear-gradient(90deg,#b0d9f1 50%,#ffffff 50%)}
+.pc-swatch-noir{background:linear-gradient(180deg,#33b8ed 0 58%,#111e39 58%);border-color:#25aee6}.pc-swatch-noir::before{background:#f9f5e9}.pc-swatch-noir::after{border-color:#0f6395;background:linear-gradient(90deg,#96def5 50%,#152943 50%)}
+.pc-banner-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pc-banner-options .pc-choice>span{padding:5px;min-height:0}.pc-banner-thumb{display:block;width:100%;aspect-ratio:1.95;object-fit:cover;border-radius:5px}.pc-banner-title{font-size:10px;display:block;font-weight:800;padding:6px 3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-badge-options{display:flex;flex-wrap:wrap;gap:8px}.pc-badge-option{display:flex;align-items:center;gap:7px;border:1px solid #534763;border-radius:8px;background:#110f1b;padding:9px;position:relative;cursor:pointer;font-size:11px;color:#ece2f5}.pc-badge-option input{accent-color:#8cbcf1;width:15px;height:15px}.pc-badge-option:has(input:checked){border-color:#d4abdf;background:#2a2039}.pc-badge-option svg{color:#d4ace9}
+.pc-bio-input{width:100%;min-height:88px;max-height:180px;resize:vertical;background:#100e1c;color:#f6efff;border:1px solid #5c4a6e;border-radius:9px;padding:12px;outline:0;font:inherit;font-size:13px}.pc-bio-input:focus{outline:2px solid #b899dc}.pc-count{display:block;text-align:right;font-size:11px;color:#b1a4bc;margin:6px 0}
+.pc-actions{margin-top:20px;border-top:1px solid #40354c;padding:18px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:10px}.pc-actions small{font-size:11px;color:#b2a9be}
+.pc-actions .btn{background:#c09fe4;color:#171023;box-shadow:none}
+.pc-preview-col{position:sticky;top:20px;min-width:0}.pc-preview-title{display:flex;align-items:center;justify-content:space-between;color:#c9bbd9;font-size:12px;margin-bottom:9px;gap:10px}.pc-live{color:#b6dfce;font-size:11px}
+/* Base card: shared content model, 5 completely different skins. */
+.pc-card{--paper:#111223;--text:#f8f5fe;--muted:#bbb8d6;--accent:#4ccbdd;--accent2:#ffa547;--line:#5e5479;--bar:#252039;position:relative;overflow:hidden;border:3px solid var(--accent);border-radius:14px;background:var(--paper);box-shadow:0 14px 30px #0203085c;color:var(--text)}
+.pc-card-surface{position:relative;overflow:hidden;background:var(--paper)}
+.pc-card-header{height:55px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bar);border-bottom:3px solid var(--accent);gap:12px}
+.pc-card-brand{font-weight:950;font-size:22px;line-height:1;font-style:italic;letter-spacing:.045em;color:var(--text);text-shadow:none}
+.pc-card-brand b{color:var(--accent2)}.pc-card-bars{display:flex;gap:5px;transform:skewX(-22deg)}.pc-card-bars i{width:22px;height:8px;background:var(--accent);display:block;box-shadow:none}
+.pc-card-banner{height:168px;position:relative;background-size:cover;background-position:center;background-color:#355e87;isolation:isolate}
+.pc-card-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#05050a73);z-index:1}
+.pc-card-banner::before{content:'';position:absolute;inset:0;z-index:2;border-bottom:3px solid var(--accent)}
+.pc-card-banner.pr-banner-cyber{background-image:url('/assets/profile-banners/cyber.webp')}.pc-card-banner.pr-banner-todas{background-image:url('/assets/profile-banners/todas.webp')}.pc-card-banner.pr-banner-anjo{background-image:url('/assets/profile-banners/anjo.webp')}.pc-card-banner.pr-banner-minecraft{background-image:url('/assets/profile-banners/minecraft.webp')}.pc-card-banner.pr-banner-santuario{background-image:url('/assets/profile-banners/santuario.webp')}.pc-card-banner.pr-banner-tropa{background-image:url('/assets/profile-banners/tropa.webp')}.pc-card-banner.pr-banner-regua{background-image:url('/assets/profile-banners/regua.webp')}
+.pc-avatar-row{position:relative;z-index:3;display:flex;gap:16px;align-items:center;margin:-38px 20px 0;min-height:124px;padding-bottom:8px}
+.pc-avatar-ring{height:108px;flex:0 0 108px;border:5px solid var(--accent);background:var(--bar);border-radius:50%;box-shadow:0 0 0 4px var(--paper);overflow:hidden}
+.pc-avatar-ring img{height:100%;width:100%;object-fit:cover;border-radius:50%}
+.pc-name-col{padding-top:42px;min-width:0;flex:1}.pc-nickname{font-size:clamp(20px,2.4vw,32px);line-height:1.15;font-weight:900;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em}
+.pc-compact-xp{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.pc-compact-xp span:last-child{font-weight:800}
+.pc-level{font-size:11px;font-weight:900;color:var(--text);border:1px solid var(--line);background:var(--bar);padding:3px 8px;border-radius:5px}
+.pc-accent-line{height:3px;margin:0 19px;background:var(--accent)}
+.pc-meta-row{display:flex;align-items:center;gap:12px;padding:14px 19px 0}.pc-wedding{display:flex;gap:9px;align-items:center;flex:1;min-width:0;padding:10px 13px;background:var(--bar);border:1px solid var(--line);border-radius:7px}.pc-heart{font-size:23px;line-height:1;color:var(--accent2)}.pc-wedding small{display:block;color:var(--muted);font-size:10px}.pc-wedding strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-badge-tray{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}.pc-badge-emblem{height:36px;width:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--bar);border-radius:7px;color:var(--accent2);box-shadow:none}.pc-empty-badges{color:var(--muted);font-size:10px;max-width:120px;line-height:1.4;text-align:right}
+.pc-bio{border:1px solid var(--line);background:var(--bar);margin:15px 19px 19px;min-height:92px;padding:14px 15px 15px;border-radius:6px;position:relative}.pc-bio-label{font-size:12px;font-weight:900;color:var(--accent2)}.pc-bio p{font-size:12px;line-height:1.6;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 0}.pc-decor-corner{position:absolute;bottom:9px;right:14px;width:29px;height:5px;background:var(--accent);clip-path:polygon(0 0,15% 0,9% 100%,0 100%,29% 0,45% 0,38% 100%,23% 100%,60% 0,75% 0,68% 100%,53% 100%)}
+.pc-preview-note{padding:12px;margin-top:12px;background:#181328a6;border:1px solid #4a3e5a;border-radius:10px;font-size:11px;color:#b4a8c3;line-height:1.65}
+/* 1 - Exclusive: angular orange / cyan / violet, flat sharp panels. */
+.pc-theme-cyber{--paper:#111025;--text:#fffaf8;--muted:#bdb3cf;--accent:#1ac7df;--accent2:#ffa32a;--line:#6f3ab7;--bar:#27143e;border-color:#2ac6d7;clip-path:polygon(0 4%,5% 0,42% 0,45% 3%,100% 3%,100% 96%,96% 100%,0 100%);border-radius:0}
+.pc-theme-cyber .pc-card-header{height:62px;background:linear-gradient(125deg,#241037 0 62%,#442270 62%);border-bottom:4px solid #ffa22e;clip-path:polygon(0 0,100% 0,100% 100%,9% 100%,7% 84%,0 84%)}
+.pc-theme-cyber .pc-avatar-row{border-bottom:3px solid #602a8b}.pc-theme-cyber .pc-wedding{border:2px solid #ff9e26;clip-path:polygon(0 0,98% 0,100% 30%,100% 100%,0 100%);background:#281638}.pc-theme-cyber .pc-bio{border:2px solid #22bed5;background:#21183d;clip-path:polygon(0 0,96% 0,100% 16%,100% 100%,0 100%)}
+/* 2 - Premium: rich purple panels, solid magenta tabs; not a glowing border. */
+.pc-theme-neon{--paper:#191126;--text:#fff7ff;--muted:#d1bedc;--accent:#ae64be;--accent2:#eb9ddf;--line:#884993;--bar:#2f1b40;border-radius:4px;border-color:#aa67b9}
+.pc-theme-neon .pc-card-header{background:#371c4b;border-bottom:4px solid #a05ab7}.pc-theme-neon .pc-card-brand{font-family:Georgia,serif;font-style:normal;letter-spacing:.08em}.pc-theme-neon .pc-bio-label{background:#7c4194;color:white;display:inline-block;padding:5px 12px;clip-path:polygon(0 0,100% 0,93% 100%,0 100%)}.pc-theme-neon .pc-bio{border-radius:0;border-width:2px}
+/* 3 - Street: bold orange and charcoal ribbons. */
+.pc-theme-ambar{--paper:#1e1a1d;--text:#fffbf4;--muted:#cbb7a6;--accent:#ec9d37;--accent2:#f5c16e;--line:#7d4b31;--bar:#362723;border-color:#f2ad3e;border-radius:0}
+.pc-theme-ambar .pc-card-header{background:#221b21;border-bottom:5px solid #ef9f3a}.pc-theme-ambar .pc-card-banner::before{border-color:#f5b151}.pc-theme-ambar .pc-name-col{transform:skewX(-2deg)}.pc-theme-ambar .pc-wedding{clip-path:polygon(0 0,96% 0,100% 50%,96% 100%,0 100%);background:#54321e;border:2px solid #e8a249}
+/* 4 - Retro community: browser/card-like light blue with pixel UI vocabulary. */
+.pc-theme-glacial{--paper:#eaf5ff;--text:#153b65;--muted:#57738f;--accent:#368fcb;--accent2:#126eaf;--line:#74b6e0;--bar:#ffffff;border-color:#278fd2;border-width:5px;border-radius:15px;font-family:Verdana,Arial,sans-serif}
+.pc-theme-glacial .pc-card-header{background:#b2e0fb;border-color:#2588c9;border-bottom-width:4px}.pc-theme-glacial .pc-card-brand{font-style:normal;letter-spacing:-.04em;color:#18528b}.pc-theme-glacial .pc-card-brand b{color:#0b82bb}.pc-theme-glacial .pc-avatar-ring{border-radius:16px;box-shadow:0 0 0 4px white}.pc-theme-glacial .pc-avatar-ring img{border-radius:11px}.pc-theme-glacial .pc-nickname{font-style:normal}.pc-theme-glacial .pc-bio{background:white;border:2px solid #56a5d9;border-radius:10px}.pc-theme-glacial .pc-level{color:#154874}.pc-theme-glacial .pc-card-banner::after{background:linear-gradient(180deg,transparent 40%,#a1d5f74d)}.pc-theme-glacial .pc-avatar-row{margin-top:-32px}
+/* 5 - Anime blue: cyan manga panel, navy wedges and illustrated banner. */
+.pc-theme-noir{--paper:#12233b;--text:#f5ffff;--muted:#b3d6e7;--accent:#2bbbe8;--accent2:#78dbf3;--line:#5299d2;--bar:#17375a;border-color:#2bb4e6;border-radius:2px;clip-path:polygon(2% 0,100% 0,100% 95%,97% 100%,0 100%,0 5%)}
+.pc-theme-noir .pc-card-header{background:#171d44;border-color:#2bc6ec}.pc-theme-noir .pc-card-banner{background-position:top}.pc-theme-noir .pc-avatar-row{background:#16365a;clip-path:polygon(0 0,100% 0,96% 100%,0 100%);padding-right:14px}.pc-theme-noir .pc-wedding{border:2px solid #29c8e3;background:#143f60;clip-path:polygon(0 0,96% 0,100% 100%,4% 100%)}.pc-theme-noir .pc-bio{background:#234d72;border:2px solid #3ed1e9;border-radius:0}.pc-theme-noir .pc-bio-label{display:inline-block;background:#35bfe9;color:#061c31;padding:4px 10px;font-weight:1000;transform:skewX(-9deg)}
+@media(max-width:1170px){.pc-grid{grid-template-columns:1fr}.pc-preview-col{position:static;order:-1;max-width:790px}}
+@media(max-width:550px){.pc-heading{align-items:flex-start;flex-direction:column}.pc-banner-options{grid-template-columns:repeat(2,1fr)}.pc-theme-options{gap:7px}.pc-avatar-ring{height:78px;flex-basis:78px;border-width:3px}.pc-avatar-row{min-height:86px;margin-top:-25px;gap:10px}.pc-name-col{padding-top:23px}.pc-nickname{font-size:20px}.pc-card-header{height:45px}.pc-theme-cyber .pc-card-header{height:47px}.pc-card-banner{height:105px}.pc-meta-row{flex-direction:column;align-items:stretch}.pc-badge-tray{justify-content:flex-start}.pc-wedding{width:100%}.pc-card-brand{font-size:17px}.pc-editor-head{padding:15px}}
 `;
 
 function themeChoice(t,selected){
@@ -102,22 +117,22 @@ export function renderProfileEditor({user, settings={}, flags=0, csrf, connected
  const badgeChoices=owned.length?owned.map(b=>`<label class="pc-badge-option"><input type="checkbox" name="badge" value="${esc(b.id)}" ${checked.includes(b.id)?'checked':''}>${badgeIcon(b.id)}${esc(b.name)}</label>`).join(''):'<p style="font-size:12px;color:#b2a8c5">Sua conta não possui insígnias públicas identificáveis pela API do Discord.</p>';
  const nickname=esc(user.global_name||user.username||'Membro');
  const bio=pref.bio||'';
- return `<div class="my-profile"><div class="pc-heading"><div><div class="pc-eyebrow">✦ IDENTIDADE VELTRIX · PERFIL</div><h1>Seu perfil, <span class="gradient-text">seu estilo.</span></h1><p>Escolha um visual, use seus banners e personalize seu cartão do <strong>.perfil</strong> — tudo direto pelo site.</p></div><a class="btn btn-secondary" href="/dashboard">Meus servidores</a></div>
+ return `<div class="my-profile"><div class="pc-heading"><div><div class="pc-eyebrow">PERFIL VELTRIX · PERSONALIZAÇÃO</div><h1>Monte seu <span class="gradient-text">cartão.</span></h1><p>Escolha um layout inspirado nos modelos que você gosta, selecione o banner e confira a prévia. Sem efeitos neon no cartão.</p></div><a class="btn btn-secondary" href="/dashboard">Meus servidores</a></div>
  ${message?`<div class="alert" role="status">${esc(message)}</div>`:''}
  ${!connected?'<div class="alert">Aguardando o bot no KataBump. Você pode experimentar o visual, mas salvar exige sincronização ativa.</div>':''}
  <div class="pc-grid">
  <form class="pc-editor" method="POST" action="/me/perfil" id="pc-editor">
   <input type="hidden" name="csrf" value="${esc(csrf)}">
   <div class="pc-editor-head"><span class="pc-editor-head-icon">✎</span><div><strong>Editor de Perfil</strong><small>Alterações visíveis na prévia ao lado</small></div></div>
-  <div class="pc-field-group"><div class="pc-field-title">Layout do perfil <small>5 estilos</small></div><div class="pc-theme-options">${THEMES.map(t=>themeChoice(t,pref.theme)).join('')}</div></div>
+  <div class="pc-field-group"><div class="pc-field-title">Estilo do cartão <small>5 layouts</small></div><div class="pc-theme-options">${THEMES.map(t=>themeChoice(t,pref.theme)).join('')}</div></div>
   <div class="pc-field-group"><div class="pc-field-title">Escolha seu banner <small>7 opções</small></div><div class="pc-banner-options">${BANNERS.map(b=>bannerChoice(b,pref.banner)).join('')}</div></div>
   <div class="pc-field-group"><div class="pc-field-title">Insígnias visíveis <small>Até 5 · apenas suas</small></div><div class="pc-badge-options">${badgeChoices}</div></div>
   <div class="pc-field-group"><label class="pc-field-title" for="pc-bio">Sobre mim <small>Opcional</small></label><textarea id="pc-bio" class="pc-bio-input" name="bio" maxlength="160" placeholder="Escreva algo sobre você...">${esc(bio)}</textarea><span class="pc-count" id="pc-count">${Array.from(bio).length}/160</span></div>
   <div class="pc-actions"><button type="submit" class="btn" ${connected?'':'disabled'}>✦ Salvar meu perfil</button><small>${connected?'Salva e sincroniza com o bot':'Conectando à Veltrix…'}</small></div>
  </form>
- <div class="pc-preview-col"><div class="pc-preview-title"><strong>◈ PRÉVIA AO VIVO</strong><span class="pc-live">● Ao alterar, atualiza aqui</span></div>
+ <div class="pc-preview-col"><div class="pc-preview-title"><strong>PRÉVIA DO CARTÃO</strong><span class="pc-live">● Ao alterar, atualiza aqui</span></div>
   <div class="pc-card pc-theme-${esc(pref.theme)}" id="pc-card"><div class="pc-card-surface">
-   <div class="pc-card-header"><span class="pc-card-brand">◈ VELTRI<b>X</b></span><span class="pc-card-bars" aria-hidden="true"><i></i><i></i><i></i></span></div>
+   <div class="pc-card-header"><span class="pc-card-brand">VELTRI<b>X</b></span><span class="pc-card-bars" aria-hidden="true"><i></i><i></i><i></i></span></div>
    <div id="pc-banner" class="pc-card-banner pr-banner-${esc(pref.banner)}" role="img" aria-label="Banner selecionado"></div>
    <div class="pc-avatar-row"><span class="pc-avatar-ring"><img src="${esc(avatarUrl(user))}" alt="Seu avatar Discord"></span><div class="pc-name-col"><div class="pc-nickname">${nickname}</div><div class="pc-compact-xp"><span class="pc-level">Nv. 9</span><span>978/1000 XP</span></div></div></div>
    <div class="pc-accent-line" aria-hidden="true"></div>
