@@ -13,8 +13,8 @@ export const DAILY_CSS=`
 .daily-panel h2{font-size:20px;letter-spacing:-.035em;margin:0 0 6px}.daily-panel p{color:#bcb2d1;font-size:14px;margin:4px 0 18px;line-height:1.55}
 .daily-kicker{color:#f5b57d;font-size:12px;font-weight:850;letter-spacing:.13em;text-transform:uppercase}
 .daily-amount{font-size:clamp(36px,5vw,56px);letter-spacing:-.06em;line-height:1.2;font-weight:900;background:linear-gradient(100deg,#ffbe79,#ffe5ba,#a6eee0);color:transparent;background-clip:text}
-.daily-amount small{font-size:17px;letter-spacing:0;font-weight:700;color:#d6c6da}
-.daily-note{margin:8px 0 20px!important}.daily-note strong{color:#ffe2ad}
+.daily-amount small{font-size:17px;letter-spacing:0;font-weight:700;color:#d6c6da}.daily-amount .daily-mystery{letter-spacing:.015em}.daily-amount.revealed{animation:dailyPrizeReveal .5s ease-out}@keyframes dailyPrizeReveal{from{opacity:.35;transform:translateY(9px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.daily-bonus-earned{margin-top:8px;color:#ffe6a8;font-size:14px;font-weight:800}.daily-bonus-earned[hidden]{display:none!important}.daily-note{margin:8px 0 20px!important}.daily-note strong{color:#ffe2ad}
 .daily-btn{background:linear-gradient(110deg,#ffb97d,#f6a4b8,#9ff3df);border:0;border-radius:14px;color:#17111e;cursor:pointer;font-weight:900;font-size:15px;padding:16px 18px;display:inline-flex;align-items:center;justify-content:center;min-width:220px;max-width:100%;box-shadow:0 12px 33px #fcb27d25}
 .daily-btn:disabled{cursor:not-allowed;filter:grayscale(.55);opacity:.6;box-shadow:none}
 .daily-btn:focus-visible{outline:2px solid #fff;outline-offset:4px}
@@ -36,11 +36,16 @@ export function renderDailyPage({user,csrf,connected,status,pending,result}) {
   const ready=!!connected&&!!balance;
   const streak=Number(balance?.streak)||0;
   const progress=streak===0?0:(streak%7||7);
+  const brDate = timestamp => new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(timestamp);
+  const resultCurrentDay= !Number.isSafeInteger(result?.at) || brDate(result.at)===brDate(Date.now());
+  const claimedAmount=(claimed && Number.isSafeInteger(balance?.todayReward) ? balance.todayReward : 0) || (resultCurrentDay && result?.ok===true && !result?.result?.alreadyClaimed && Number.isSafeInteger(result?.result?.amount) ? result.result.amount : 0);
+  const claimedBonus=(claimed && Number.isSafeInteger(balance?.todayBonus) ? balance.todayBonus : 0) || (resultCurrentDay && result?.ok===true && Number.isSafeInteger(result?.result?.bonus) ? result.result.bonus : 0);
+  const revealed=claimedAmount>0;
   const note=!connected?'A Veltrix está offline; aguarde a conexão com o KataBump.':!balance?'Sincronizando seu saldo com a Veltrix...':pending?'Processando seu resgate no KataBump...':claimed?'O daily de hoje já foi coletado! Volte à 00h (Brasília).':'Disponível para coletar agora!';
-  const outcome=result && !pending?result.ok===true?(result.result?.alreadyClaimed?'Você já havia coletado o daily de hoje.':`🎉 Resgatado: +${fmt(result.result?.amount)} VelCoins${Number(result.result?.bonus)?` + ${fmt(result.result.bonus)} VC de sequência!`:''}`):`⚠️ Não foi possível resgatar: ${esc(result.error||'tente novamente.')}`:'';
+  const outcome=result && resultCurrentDay && !pending?result.ok===true?(result.result?.alreadyClaimed?'Você já havia coletado o daily de hoje.':`🎉 Resgatado: +${fmt(result.result?.amount)} VelCoins${Number(result.result?.bonus)?` + ${fmt(result.result.bonus)} VC de sequência!`:''}`):`⚠️ Não foi possível resgatar: ${esc(result.error||'tente novamente.')}`:'';
   return `<div class="daily-shell" id="daily-root" data-pending="${pending?'1':'0'}">
     <div class="daily-head"><div><div class="daily-eyebrow">VELTRIX · ECONOMIA GLOBAL</div><h1>Seu <span class="gradient-text">Daily</span> 🎁</h1><p>Entre com Discord, receba suas VelCoins e mantenha sua sequência. O saldo é o mesmo em todos os servidores.</p></div><a class="daily-back" href="/dashboard">← Meus servidores</a></div>
-    <div class="daily-layout"><section class="daily-panel daily-hero"><span class="daily-kicker">✦ Recompensa diária</span><h2>Seu presente está aqui.</h2><div class="daily-amount">5.000 — 10.000 <small>VC</small></div>
+    <div class="daily-layout"><section class="daily-panel daily-hero"><span class="daily-kicker">✦ Recompensa diária</span><h2>Seu presente está aqui.</h2><div class="daily-amount ${revealed?'revealed':''}" id="daily-amount" aria-live="polite">${revealed?`+${fmt(claimedAmount)} <small>VelCoins!</small>`:claimed?'🎁 Resgatado!':`<span class="daily-mystery">🎁 ???</span> <small>VelCoins</small>`}</div><div class="daily-bonus-earned" id="daily-bonus-earned" ${claimedBonus>0?'':'hidden'}>🏆 Bônus de sequência: +${claimedBonus>0?fmt(claimedBonus):'0'} VC!</div>
     <p class="daily-note">A cada <strong>7 dias consecutivos</strong>, você ganha mais <strong>100.000 VelCoins</strong>!</p>
     <form action="/me/daily/claim" method="POST"><input type="hidden" name="csrf" value="${esc(csrf)}"/><button type="submit" id="daily-claim" class="daily-btn" ${!ready||claimed||pending?'disabled':''}>${pending?'⏳ Processando...':claimed?'✓ Daily resgatado':'🎁 Resgatar daily'}</button></form>
     <div id="daily-message" role="status" class="daily-status">${outcome||esc(note)}</div>
@@ -49,7 +54,7 @@ export function renderDailyPage({user,csrf,connected,status,pending,result}) {
     <div class="daily-balance"><div class="daily-stat"><span>👛 Carteira</span><strong id="daily-wallet">${balance?fmt(balance.wallet):'—'}</strong></div><div class="daily-stat"><span>🏦 Banco</span><strong id="daily-bank">${balance?fmt(balance.bank):'—'}</strong></div></div>
     <div class="daily-progress-area"><span class="daily-kicker">🔥 SEQUÊNCIA</span><h2 class="daily-streak-heading"><span id="daily-streak">${streak}</span> dia(s)</h2><div class="daily-streak" id="daily-streak-dots">${Array.from({length:7},(_,i)=>`<div class="daily-day ${i<progress?'active':''}"><span class="flame">${i<progress?'🔥':'✦'}</span>${i+1}</div>`).join('')}</div><span class="daily-muted" id="daily-next-bonus">${balance?`Próximo bônus em ${balance.nextBonusIn} resgate(s).`:'O progresso aparecerá após sincronizar.'}</span></div></section>
     <section class="daily-panel daily-extra"><span class="daily-extra-icon">🎬</span><span class="daily-kicker">BÔNUS EXTRA</span><h2>Mais VelCoins assistindo anúncio?</h2><p>Queremos adicionar um anúncio recompensado opcional. O benefício ficará disponível quando uma rede aprovar o uso e confirmar cada visualização pelo servidor.</p><button class="daily-btn daily-locked" disabled title="Aguardando provedor de anúncios compatível">🔒 Ver anúncio — em breve</button><div class="daily-muted daily-extra-footer">O daily grátis continua funcionando normalmente, sem anúncio.</div></section>
-    <section class="daily-panel"><span class="daily-extra-icon">💜</span><span class="daily-kicker">CONTA VELTRIX</span><h2>Uma carteira em qualquer servidor.</h2><p>Seu daily pelo site usa o mesmo ID e as mesmas regras de <strong>.daily</strong> no Discord. Resgatou em um lugar? Já estará resgatado no outro.</p><a href="/me/perfil" class="daily-back">✦ Personalizar meu perfil</a></section></div>
+    <section class="daily-panel"><span class="daily-extra-icon">💜</span><span class="daily-kicker">CONTA VELTRIX</span><h2>Uma carteira em qualquer servidor.</h2><p>Seu daily pelo site usa o mesmo ID e as mesmas regras de <strong>.daily</strong> no Discord. Resgatou em um lugar? Já estará resgatado no outro.</p></section></div>
     <script src="/assets/veltrix-daily-v1.js" defer></script>
   </div>`;
 }
