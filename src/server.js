@@ -276,13 +276,26 @@ async function guildsFor(req){
 // Perfil individual: cada pessoa edita SOMENTE o próprio usuário autenticado.
 // Não exige Gerenciar Servidor e nunca permite trocar userId pelo formulário.
 async function personalFlags(req){
-  if(Number.isInteger(req.session.user?.public_flags))return req.session.user.public_flags;
+  const previous = Number(req.session.user?.public_flags);
+  const last = Number(req.session.houseFlagsCheckedAt || 0);
+  // Revalidar no Discord: se o usuário trocar de casa, o editor acompanha
+  // sem precisar de logout. Não confiar em flags enviadas pelo navegador.
+  if(Number.isSafeInteger(previous) && previous >= 0 && Date.now()-last < 120000)return previous;
   try {
     const r=await fetch('https://discord.com/api/v10/users/@me',{
       headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:AbortSignal.timeout(7000)});
-    if(r.ok){const info=await r.json();req.session.user.public_flags=Number(info.public_flags||0);return req.session.user.public_flags;}
-  }catch{}
-  return 0;
+    if(r.ok){
+      const info=await r.json();
+      const received = Number(info.public_flags);
+      if(Number.isSafeInteger(received) && received >= 0){
+        req.session.user.public_flags=received;
+        req.session.houseFlagsCheckedAt=Date.now();
+        return received;
+      }
+    }
+  }catch(e){ console.warn('[perfil] Não foi possível atualizar insígnias públicas:',e?.name||'erro temporário'); }
+  // Queda da API não apaga as insígnias que já estavam no login.
+  return Number.isSafeInteger(previous) && previous >= 0 ? previous : 0;
 }
 app.get('/me/perfil',logged,async(req,res)=>{
   const uid=req.session.user.id;

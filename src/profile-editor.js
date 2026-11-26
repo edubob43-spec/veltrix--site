@@ -22,7 +22,13 @@ const BADGE_ICONS = {
  moderator:'<path d="m12 2 9 4v6c0 5-3 8-9 10-6-2-9-5-9-10V6zM7 12l3 3 6-6"/>',
  active:'<path d="m12 1 3.2 7.8L23 12l-7.8 3.2L12 23l-3.2-7.8L1 12l7.8-3.2z"/>'
 };
-function badgeIcon(id){return `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${BADGE_ICONS[id]||BADGE_ICONS.active}</svg>`;}
+// As três casas HypeSquad têm imagens diferentes, vindas do material
+// fornecido para a Veltrix. A conta só recebe a imagem da flag real (64/128/256).
+const HYPE_HOUSES = new Set(['bravery','brilliance','balance']);
+const houseSrc = id => `/assets/profile-badges/${id}.png?v=52`;
+function badgeIcon(id){
+ if(HYPE_HOUSES.has(id))return `<img class="pc-house-badge" src="${houseSrc(id)}" alt="" width="26" height="26" loading="lazy">`;
+ return `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${BADGE_ICONS[id]||BADGE_ICONS.active}</svg>`;}
 
 export const PROFILE_EDITOR_CSS = `
 /* V5: layouts estruturais inspirados nos exemplos enviados. Sem neon ou bordas luminosas. */
@@ -100,6 +106,11 @@ export const PROFILE_EDITOR_CSS = `
 .pc-theme-noir .pc-card-header{background:#171d44;border-color:#2bc6ec}.pc-theme-noir .pc-card-banner{background-position:top}.pc-theme-noir .pc-avatar-row{background:#16365a;clip-path:polygon(0 0,100% 0,96% 100%,0 100%);padding-right:14px}.pc-theme-noir .pc-wedding{border:2px solid #29c8e3;background:#143f60;clip-path:polygon(0 0,96% 0,100% 100%,4% 100%)}.pc-theme-noir .pc-bio{background:#234d72;border:2px solid #3ed1e9;border-radius:0}.pc-theme-noir .pc-bio-label{display:inline-block;background:#35bfe9;color:#061c31;padding:4px 10px;font-weight:1000;transform:skewX(-9deg)}
 @media(max-width:1170px){.pc-grid{grid-template-columns:1fr}.pc-preview-col{position:static;order:-1;max-width:790px}}
 @media(max-width:550px){.pc-heading{align-items:flex-start;flex-direction:column}.pc-banner-options{grid-template-columns:repeat(2,1fr)}.pc-theme-options{gap:7px}.pc-avatar-ring{height:78px;flex-basis:78px;border-width:3px}.pc-avatar-row{min-height:86px;margin-top:-25px;gap:10px}.pc-name-col{padding-top:23px}.pc-nickname{font-size:20px}.pc-card-header{height:45px}.pc-theme-cyber .pc-card-header{height:47px}.pc-card-banner{height:105px}.pc-meta-row{flex-direction:column;align-items:stretch}.pc-badge-tray{justify-content:flex-start}.pc-wedding{width:100%}.pc-card-brand{font-size:17px}.pc-editor-head{padding:15px}}
+
+/* V5.2: o emblema real da casa HypeSquad é plano e recortado, sem ícone inventado. */
+.pc-house-badge{display:block;width:27px;height:27px;object-fit:contain;flex:none}
+.pc-badge-emblem .pc-house-badge{width:30px;height:30px}
+.pc-badge-option:has(.pc-house-badge){min-height:44px}
 `;
 
 function themeChoice(t,selected){
@@ -140,5 +151,5 @@ export function renderProfileEditor({user, settings={}, flags=0, csrf, connected
    <div class="pc-bio"><div class="pc-bio-label">◇ SOBRE MIM</div><p id="pc-bio-preview">${esc(bio)||'Sua descrição vai aparecer aqui…'}</p><span class="pc-decor-corner" aria-hidden="true"></span></div>
   </div></div>
   <div class="pc-preview-note">O nome será o <b>apelido usado no servidor</b>. Nível, XP, casamento e avatar serão os dados reais no Discord. A prévia usa valores de exemplo apenas para mostrar o visual. Não inclui conquistas nem barra de XP.</div>
- </div></div><script src="/assets/veltrix-profile-editor-v4.js" defer></script></div>`;
+ </div></div><script src="/assets/veltrix-profile-editor-v52.js" defer></script></div>`;
 }
