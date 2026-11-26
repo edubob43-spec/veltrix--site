@@ -14,6 +14,7 @@ import { V2_ACTION_SECTION, V2_PERMISSIONS, validateV2Action } from './v2-contra
 import { DEFAULT_SETTINGS } from './defaults.js';
 import { cleanProfile, ownedBadges } from './profile-contract.js';
 import { renderProfileEditor } from './profile-editor.js';
+import { renderDailyPage } from './daily-page.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
@@ -40,7 +41,7 @@ const constantSecretMatch = (provided, expected) => {
 const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
-const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), lastSeen:0, botOnline:false };
+const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), dailyWatch:new Map(), dailyStatuses:new Map(),lastSeen:0, botOnline:false };
 // Pedidos de sincronização HTTPS aguardando novos trabalhos.
 // Ao salvar uma configuração, acordamos o bot imediatamente.
 const bridgeWaiters = new Set();
@@ -48,6 +49,7 @@ const notifyBridge = () => { for (const wake of [...bridgeWaiters]) wake(); };
 const connected = () => bridge.botOnline && Date.now()-bridge.lastSeen < 120000;
 const queueJob = (guildId, userId, type, payload, action='') => {
   if(type==='profile-settings' && [...bridge.jobs.values()].some(j=>j.type===type && j.userId===userId))throw Error('Você já tem uma atualização de perfil em andamento. Aguarde a sincronização.');
+  if(type==='daily-claim' && [...bridge.jobs.values()].some(j=>j.type===type && j.userId===userId))throw Error('Seu resgate diário já está sendo processado.');
   if ([...bridge.jobs.values()].filter(j=>j.guildId===guildId).length >= 25) throw Error('Fila desse servidor lotada. Tente novamente depois.');
   const id=randomUUID();
   bridge.jobs.set(id,{id,guildId,userId,type,action,payload,createdAt:Date.now()});
@@ -94,6 +96,16 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
       try {bridge.profiles.set(uid,cleanProfile(raw));} catch {}
     }
   }
+  // Somente o KataBump (autenticado pelo BRIDGE_SECRET) fornece saldos do Daily.
+  if (req.body.dailyStatuses && typeof req.body.dailyStatuses==='object' && !Array.isArray(req.body.dailyStatuses)) {
+    for(const [uid,value] of Object.entries(req.body.dailyStatuses).slice(0,120)) {
+      if(!safeId(uid) || !bridge.dailyWatch.has(uid) || !value || typeof value!=='object')continue;
+      const fields=['wallet','bank','streak','nextBonusIn','resetAt','asOf','lastClaimAt'];
+      if(fields.some(k=>!Number.isSafeInteger(value[k])||value[k]<0))continue;
+      if(typeof value.claimedToday!=='boolean'||!/^\d{4}-\d{2}-\d{2}$/.test(String(value.dayKey)))continue;
+      bridge.dailyStatuses.set(uid,{...Object.fromEntries(fields.map(k=>[k,value[k]])),claimedToday:value.claimedToday,dayKey:value.dayKey,receivedAt:Date.now()});
+    }
+  }
   bridge.botOnline=!!req.body.botOnline;
   bridge.lastSeen=Date.now();
   const acked=[];
@@ -103,12 +115,19 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     const job=bridge.jobs.get(completed.id);
     if(job){
       if(job.type==='profile-settings')bridge.profilePending.delete(job.userId);
-      bridge.results.set(job.type==='profile-settings'?`profile:${job.userId}`:job.guildId,{ok:!!completed.ok,error:safeError(completed.error),at:Date.now(),action:job.action||job.type});bridge.jobs.delete(job.id);
+      const resultKey=job.type==='profile-settings'?`profile:${job.userId}`:job.type==='daily-claim'?`daily:${job.userId}`:job.guildId;
+      const details=job.type==='daily-claim' && completed.result && typeof completed.result==='object' ? {
+        alreadyClaimed:completed.result.alreadyClaimed===true,
+        amount:Number.isSafeInteger(completed.result.amount)?completed.result.amount:0,
+        bonus:Number.isSafeInteger(completed.result.bonus)?completed.result.bonus:0
+      }:undefined;
+      bridge.results.set(resultKey,{ok:!!completed.ok,error:safeError(completed.error),result:details,at:Date.now(),action:job.action||job.type});bridge.jobs.delete(job.id);
     }
   }
   for(const job of bridge.jobs.values())if(Date.now()-job.createdAt>30*60*1000)bridge.jobs.delete(job.id);
   for(const [uid,created] of bridge.profilePending)if(Date.now()-created>35*60*1000)bridge.profilePending.delete(uid);
   for(const [key,info] of bridge.results)if(Date.now()-info.at>60*60*1000)bridge.results.delete(key);
+  for(const [uid,last] of bridge.dailyWatch)if(Date.now()-last>15*60*1000){bridge.dailyWatch.delete(uid);bridge.dailyStatuses.delete(uid);}
   // Long polling: uma única requisição HTTPS fica aguardando até surgir uma ação,
   // evitando o intervalo fixo de 15-30 segundos da V2.5.
   // Render responde ao final de no máximo 18 segundos para atualizar o heartbeat.
@@ -119,7 +138,7 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     replied=true;
     clearTimeout(timeout);
     bridgeWaiters.delete(reply);
-    res.set('Cache-Control','no-store').json({jobs:[...bridge.jobs.values()].slice(0,20),acked});
+    res.set('Cache-Control','no-store').json({jobs:[...bridge.jobs.values()].slice(0,20),acked,watchDaily:[...bridge.dailyWatch.keys()].slice(0,120)});
   };
   res.on('close',()=>{
     replied=true;
@@ -139,6 +158,8 @@ const FileStore=FileStoreFactory(session);
 app.use(session({store:new FileStore({path:sessionDir,ttl:60*60*24,retries:1}),name:'veltrix.render.sid',secret:sessionSecret||randomBytes(48).toString('hex'),resave:false,saveUninitialized:false,rolling:true,cookie:{httpOnly:true,sameSite:'lax',secure:true,maxAge:24*60*60*1000}}));
 const limiter=rateLimit({windowMs:15*60*1000,limit:90,standardHeaders:'draft-7',legacyHeaders:false});
 app.use('/auth',limiter);app.use('/dashboard',limiter);app.use('/me',limiter);
+// A tela consulta o status a cada poucos segundos; rate limit próprio protege sem cortar o polling.
+app.use('/api/me',rateLimit({windowMs:15*60*1000,limit:300,standardHeaders:'draft-7',legacyHeaders:false}));
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
 app.get('/',(req,res)=>{
   const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Aguardando sincronização do bot';
@@ -276,27 +297,53 @@ async function guildsFor(req){
 // Perfil individual: cada pessoa edita SOMENTE o próprio usuário autenticado.
 // Não exige Gerenciar Servidor e nunca permite trocar userId pelo formulário.
 async function personalFlags(req){
-  const previous = Number(req.session.user?.public_flags);
-  const last = Number(req.session.houseFlagsCheckedAt || 0);
-  // Revalidar no Discord: se o usuário trocar de casa, o editor acompanha
-  // sem precisar de logout. Não confiar em flags enviadas pelo navegador.
-  if(Number.isSafeInteger(previous) && previous >= 0 && Date.now()-last < 120000)return previous;
+  if(Number.isInteger(req.session.user?.public_flags))return req.session.user.public_flags;
   try {
     const r=await fetch('https://discord.com/api/v10/users/@me',{
       headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:AbortSignal.timeout(7000)});
-    if(r.ok){
-      const info=await r.json();
-      const received = Number(info.public_flags);
-      if(Number.isSafeInteger(received) && received >= 0){
-        req.session.user.public_flags=received;
-        req.session.houseFlagsCheckedAt=Date.now();
-        return received;
-      }
-    }
-  }catch(e){ console.warn('[perfil] Não foi possível atualizar insígnias públicas:',e?.name||'erro temporário'); }
-  // Queda da API não apaga as insígnias que já estavam no login.
-  return Number.isSafeInteger(previous) && previous >= 0 ? previous : 0;
+    if(r.ok){const info=await r.json();req.session.user.public_flags=Number(info.public_flags||0);return req.session.user.public_flags;}
+  }catch{}
+  return 0;
 }
+
+// Daily individual: o usuário autenticado não escolhe o userId nem o valor recebido.
+const brDayNow = () => new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(Date.now());
+function watchDaily(uid) {
+  const first=!bridge.dailyWatch.has(uid),prev=bridge.dailyWatch.get(uid)||0;
+  bridge.dailyWatch.set(uid,Date.now());
+  // Acordar o long-poll do bot quando a pessoa abre a página.
+  if(first||Date.now()-prev>45000)notifyBridge();
+}
+function dailyState(uid){
+  const stat=bridge.dailyStatuses.get(uid);
+  return stat && Date.now()-stat.receivedAt<60000 && stat.dayKey===brDayNow()?stat:null;
+}
+function dailyPending(uid){return [...bridge.jobs.values()].some(j=>j.type==='daily-claim'&&j.userId===uid);}
+app.get('/me/daily',logged,(req,res)=>{
+  const uid=req.session.user.id;
+  watchDaily(uid);
+  const stat=dailyState(uid),pending=dailyPending(uid);
+  const result=bridge.results.get(`daily:${uid}`);
+  const html=renderDailyPage({user:req.session.user,csrf:req.session.csrf,connected:connected(),status:stat,pending,result:result && Date.now()-result.at<120000?result:null});
+  res.set('Cache-Control','no-store').send(page('Meu Daily',html,{user:req.session.user}));
+});
+app.get('/api/me/daily',logged,(req,res)=>{
+  const uid=req.session.user.id;watchDaily(uid);
+  const result=bridge.results.get(`daily:${uid}`);
+  res.set('Cache-Control','no-store').json({connected:connected(),status:dailyState(uid),pending:dailyPending(uid),result:result && Date.now()-result.at<120000?result:null});
+});
+app.post('/me/daily/claim',logged,checkCsrf,(req,res)=>{
+  const uid=req.session.user.id;
+  if(!connected())return res.status(503).send(page('Veltrix offline','<div class="alert">Aguarde a conexão do bot com o KataBump.</div><a class="btn" href="/me/daily">Voltar</a>',{user:req.session.user}));
+  // O comando .daily no bot efetua a verificação definitiva. Este é apenas um filtro visual.
+  if(dailyState(uid)?.claimedToday)return res.redirect('/me/daily');
+  try{
+    bridge.results.delete(`daily:${uid}`);
+    queueJob('',uid,'daily-claim',{});
+    watchDaily(uid);
+    return res.redirect('/me/daily?queued=1');
+  }catch(e){return res.status(429).send(page('Resgate já em processamento',`<div class="alert">${esc(safeError(e.message))}</div><a class="btn" href="/me/daily">Voltar</a>`,{user:req.session.user}));}
+});
 app.get('/me/perfil',logged,async(req,res)=>{
   const uid=req.session.user.id;
   const flags=await personalFlags(req);
