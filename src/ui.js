@@ -23,11 +23,24 @@ const nav=[['geral','Visão geral','layout-dashboard'],['aparencia','Aparência'
 
 function page(title,content,{user=null,side='',flash='',active=''}={}){
   const notices=flash?`<div class="alert">${esc(flash)}</div>`:'';
-  const userbar=user?`<div class="user"><img src="${esc(user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : 'https://cdn.discordapp.com/embed/avatars/0.png')}" alt=""/><span>${esc(user.global_name||user.username)}</span><a href="/me/daily">🎁 Daily</a><a href="/me/perfil">Meu perfil</a><a href="/auth/logout">Sair</a></div>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
+  const userbar=user?`<details class="vel-user-menu" id="vel-user-menu">
+    <summary class="vel-user-trigger" aria-label="Abrir opções da conta Veltrix">
+      <span class="vel-user-avatar-wrap"><img class="vel-user-avatar" src="${esc(user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : 'https://cdn.discordapp.com/embed/avatars/0.png')}" alt=""/><span class="vel-user-online" aria-hidden="true"></span></span>
+      <span class="vel-user-identity"><strong>${esc(user.global_name||user.username)}</strong><small>Minha conta</small></span>
+      <svg class="vel-user-caret" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <nav class="vel-user-dropdown" aria-label="Menu da conta">
+      <div class="vel-menu-title"><span>✦ SUA CONTA</span><small>Conectado via Discord</small></div>
+      <a class="vel-menu-item" href="/me/daily" data-vel-menu-path="/me/daily"><span class="vel-menu-icon vel-menu-gift" aria-hidden="true">🎁</span><span class="vel-menu-copy"><strong>Daily</strong><small>Resgatar meu presente diário</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
+      <a class="vel-menu-item" href="/me/perfil" data-vel-menu-path="/me/perfil"><span class="vel-menu-icon vel-menu-profile" aria-hidden="true">✦</span><span class="vel-menu-copy"><strong>Meu perfil</strong><small>Editar aparência e informações</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
+      <div class="vel-menu-separator" aria-hidden="true"></div>
+      <a class="vel-menu-item vel-menu-exit" href="/auth/logout"><span class="vel-menu-icon vel-menu-logout" aria-hidden="true">↪</span><span class="vel-menu-copy"><strong>Sair</strong><small>Desconectar do painel</small></span></a>
+    </nav>
+  </details>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
   const isLanding = title === 'Início';
   const particleField = `<div class="sparkfield" aria-hidden="true"><canvas class="vel-star-canvas" aria-hidden="true"></canvas></div>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style></head><body class="${isLanding?'landing-page':'dashboard-page'}">
-  ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer>Veltrix 💜 · discord.js · Painel OAuth2</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script></body></html>`;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/></head><body class="${isLanding?'landing-page':'dashboard-page'}">
+  ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer>Veltrix 💜 · discord.js · Painel OAuth2</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
 function sidebar(guild,active) {
   return `<aside class="sidebar"><div class="serverchip"><div class="servericon">${esc(guild.name[0]||'V')}</div><div><small>SERVIDOR</small><strong>${esc(guild.name)}</strong></div></div><nav>${nav.map(([id,name])=>`<a class="navlink ${active===id?'active':''}" href="/dashboard/${guild.id}/${id}"><span class="navicon">${{geral:'◈',aparencia:'✧',boasvindas:'☼',logs:'▤',tickets:'▣',niveis:'★',parcerias:'♡',permissoes:'♢',identidade:'◉'}[id]}</span>${name}</a>`).join('')}</nav><a class="back" href="/me/daily">🎁 Meu Daily</a><a class="back" href="/me/perfil">✦ Meu perfil</a><a class="back" href="/dashboard">← Trocar de servidor</a></aside>`;
