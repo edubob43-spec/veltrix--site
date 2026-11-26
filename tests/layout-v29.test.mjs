@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const ui=readFileSync(new URL('../PRONTO/src/ui.js',import.meta.url),'utf8');
+const css=readFileSync(new URL('../PRONTO/src/assets/veltrix-layout-v29.css',import.meta.url),'utf8');
+test('footer antigo removido',()=>assert.ok(!ui.includes('discord.js · Painel OAuth2')));
+test('footer novo com nome e ponto',()=>assert.match(ui,/vel-footer-name.*Veltrix.*vel-footer-dot.*by: thwedu/));
+test('CSS da V2.9 incluído',()=>assert.ok(ui.includes('/assets/veltrix-layout-v29.css')));
+test('menu V2.8 e opções preservados',()=>{for(const s of ['/me/daily','/me/perfil','/auth/logout','vel-user-dropdown']) assert.ok(ui.includes(s));});
+test('sidebar encostada na esquerda só em desktop',()=>{assert.ok(css.includes('body.dashboard-page .shell'));assert.ok(css.includes('max-width: none'));assert.ok(css.includes('(max-width: 680px)'));});
+test('footer visual',()=>{assert.ok(css.includes('.vel-footer-v29'));assert.ok(css.includes('.vel-footer-dot'));});

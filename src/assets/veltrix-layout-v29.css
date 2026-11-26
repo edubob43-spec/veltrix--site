@@ -1,0 +1,57 @@
+/* Veltrix V2.9 — alinhamento lateral e créditos do painel. */
+/* Desktop: a área de opções começa perto da borda esquerda, sem margem do container de 1500px. */
+@media (min-width: 1060px) {
+  body.dashboard-page .shell {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+  body.dashboard-page .sidebar {
+    width: 248px;
+    padding-left: clamp(18px, 1.6vw, 30px);
+    padding-right: 17px;
+  }
+  body.dashboard-page .main {
+    padding-left: clamp(30px, 3.2vw, 54px);
+    padding-right: clamp(30px, 3.2vw, 54px);
+  }
+  body.dashboard-page .top {
+    padding-left: clamp(20px, 2.3vw, 42px);
+    padding-right: clamp(28px, 3vw, 54px);
+  }
+  body.dashboard-page .vel-user-menu { margin-right: 28px; }
+}
+@media (min-width: 681px) and (max-width: 1059px) {
+  body.dashboard-page .shell { max-width: none; width: 100%; }
+  body.dashboard-page .vel-user-menu { margin-right: 16px; }
+}
+@media (max-width: 680px) {
+  /* Mantém a navegação horizontal original no celular. */
+  body.dashboard-page .vel-user-menu { margin-right: 0; }
+}
+
+/* Rodapé discreto que substitui os créditos técnicos antigos. */
+.vel-footer-v29 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 22px 0 24px;
+  margin-top: 72px;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: .015em;
+  color: rgba(207, 194, 230, .68);
+  text-align: center;
+}
+.vel-footer-v29 .vel-footer-name { font-weight: 750; color: rgba(237, 221, 255, .84); }
+.vel-footer-v29 .vel-footer-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c69bff, #85e6d9);
+  box-shadow: 0 0 8px rgba(157, 113, 232, .25);
+}
+.vel-footer-v29 .vel-footer-credit { font-weight: 500; }
