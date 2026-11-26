@@ -301,7 +301,7 @@ app.post('/me/perfil',logged,checkCsrf,async(req,res)=>{
     const all=ownedBadges(flags).map(b=>b.id);
     const selected=req.body.badge===undefined?[]:Array.isArray(req.body.badge)?req.body.badge:[req.body.badge];
     if(selected.length>5 || selected.some(b=>!all.includes(String(b))))throw Error('Selecione no máximo 5 insígnias que pertencem à sua conta.');
-    const pref=cleanProfile({theme:req.body.theme,banner:req.body.banner,badges:selected});
+    const pref=cleanProfile({theme:req.body.theme,banner:req.body.banner,badges:selected,bio:req.body.bio||''});
     const uid=req.session.user.id;
     queueJob('',uid,'profile-settings',pref);
     bridge.profiles.set(uid,pref);

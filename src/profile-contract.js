@@ -1,6 +1,7 @@
 // Identical validation contract on Render and KataBump.
 // Public flags, not invented badges. Discord does not expose every profile badge.
 export const BANNERS = Object.freeze([
+  { id: 'cyber', name: 'Anime Neon', tone: 'Azul elétrico' },
   { id: 'todas', name: 'De todas', tone: 'Laranja & preto' },
   { id: 'anjo', name: 'Loves Money', tone: 'Dark minimal' },
   { id: 'minecraft', name: 'Mundo em blocos', tone: 'Verde aventureiro' },
@@ -9,6 +10,7 @@ export const BANNERS = Object.freeze([
   { id: 'regua', name: 'Na régua', tone: 'Urbano' }
 ]);
 export const THEMES = Object.freeze([
+  { id:'cyber', name:'Cyber Anime', accent:'#FF3BEB', secondary:'#00E5FF', bg:'#100C26' },
   { id:'neon', name:'Violeta Neon', accent:'#C17BFF', secondary:'#AA7CFF', bg:'#120D21' },
   { id:'ambar', name:'Âmbar', accent:'#FFAD66', secondary:'#F46BA9', bg:'#191018' },
   { id:'glacial', name:'Glacial', accent:'#72E7DE', secondary:'#7AA6FF', bg:'#091C23' },
@@ -30,7 +32,7 @@ export const BADGES = Object.freeze([
   { id:'moderator', name:'Moderador certificado', bit:262144, short:'MOD' },
   { id:'active', name:'Desenvolvedor Ativo', bit:4194304, short:'AD' }
 ]);
-export const DEFAULT_PROFILE = Object.freeze({ banner:'todas', theme:'neon', badges:null });
+export const DEFAULT_PROFILE = Object.freeze({ banner:'cyber', theme:'cyber', badges:null, bio:'' });
 const list=(arr, id)=>arr.some(x=>x.id===id);
 export function ownedBadges(flags) {
   const n=Number(flags);
@@ -48,7 +50,9 @@ export function cleanProfile(raw={}) {
     if(!Array.isArray(badges)||badges.length>5||badges.some(x=>typeof x!=='string'||!list(BADGES,x)))throw Error('Insígnias inválidas.');
     badges=[...new Set(badges)];
   }
-  return { banner, theme, badges };
+  const bio=String(raw.bio??'').trim();
+  if(Array.from(bio).length>160 || /[\x00-\x08\x0b-\x1f\x7f]/.test(bio))throw Error('Descrição inválida: limite de 160 caracteres.');
+  return { banner, theme, badges, bio };
 }
 export function visibleBadges(raw,flags){
   const owned=ownedBadges(flags);
