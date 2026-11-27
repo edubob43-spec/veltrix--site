@@ -13,3 +13,8 @@ test('o HTML inclui config específica de servidor',()=>assert.match(sectionHtml
 test('valida canal correto',()=>assert.equal(validSettings('boasvindas',{welcomeEnabled:'on',welcomeChannelId:cid,welcomeMessage:'Olá'},guild).welcomeChannelId,cid));
 test('rejeita prefixo inválido',()=>assert.throws(()=>validSettings('aparencia',{prefix:'/',embedColor:'#aabbcc'},guild),/Prefixo/));
 test('ID de servidor precisa ser snowflake',()=>{assert.equal(safeId(gid),true);assert.equal(safeId('../etc/passwd'),false);});
+
+test('V3: CSS da home é carregado somente na página inicial',()=>{
+ assert.match(page('Início','oi'),/veltrix-home-v30\.css/);
+ assert.doesNotMatch(page('Servidores','oi'),/veltrix-home-v30\.css/);
+});
