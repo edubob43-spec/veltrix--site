@@ -119,6 +119,48 @@ function sectionHtml(guild,s,section,csrf,store){
       <div class="stats"><div class="stat"><span>Membros</span><strong>${guild.memberCount||'—'}</strong><small>Seu servidor</small></div><div class="stat"><span>Perfis XP</span><strong>${count}</strong><small>Participantes</small></div><div class="stat"><span>Tickets abertos</span><strong>${open}</strong><small>Atendimentos</small></div><div class="stat"><span>Sorteios ativos</span><strong>${draws}</strong><small>Em andamento</small></div></div>
       <div class="feature-grid">${nav.filter(x=>x[0]!=='geral').map(([k,n])=>`<a class="feature" href="/dashboard/${guild.id}/${k}"><span class="feature-emoji">${{aparencia:'🎨',boasvindas:'👋',logs:'📜',tickets:'🎫',niveis:'🏆',parcerias:'🤝',permissoes:'🔐',identidade:'🌟'}[k]}</span><strong>${esc(n)}</strong><small>Configurar módulo →</small></a>`).join('')}</div>`;
   }
+  if(section==='niveis'){
+    // As configurações de XP já pertencem ao servidor selecionado.
+    // A chave de progresso no bot é guildId:userId; não mostrar dados globais aqui.
+    const participants=Math.max(0,Math.trunc(Number(guild.stats?.xpProfiles)||0));
+    const cooldown=Number.isInteger(s.xpCooldown)&&s.xpCooldown>=10&&s.xpCooldown<=100?s.xpCooldown:60;
+    const status=s.xpEnabled===true;
+    const options=[{id:'',name:'Não enviar avisos'},...textCh.filter(ch=>ch.id)];
+    const channelPicker=field('xpChannelId','Canal dos avisos de nível',s.xpChannelId,'text','Deixe sem canal para não enviar anúncios.',options);
+    const name=String(guild.name||'Servidor').trim();
+    const form=`<form method="POST" action="/dashboard/${esc(guild.id)}/save/niveis" class="config-form vel-xp-config-form">
+      <input type="hidden" name="csrf" value="${esc(csrf)}"/>
+      <label class="switch vel-xp-enabled"><span><strong>Ativar experiência por mensagens</strong><small>O XP deste servidor é independente do XP de outros servidores.</small></span><input type="checkbox" name="xpEnabled" ${status?'checked':''}/><i></i></label>
+      <div class="vel-xp-fields">${channelPicker}
+        <label class="field"><span>Cooldown entre mensagens pontuadas</span>
+          <input name="xpCooldown" type="number" inputmode="numeric" required min="10" max="100" step="1" value="${cooldown}"/>
+          <small>De 10 a 100 segundos, separado para cada membro neste servidor.</small>
+        </label>
+      </div>
+      <div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>As configurações serão enviadas ao bot no KataBump.</small></div>
+    </form>`;
+    return `<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>
+      <h1>Níveis <span class="gradient-text">& XP</span></h1><p>Configure a experiência de <strong>${esc(name)}</strong> sem afetar nenhum outro servidor.</p></div>
+      <section class="vel-xp-stats" aria-label="Resumo de XP neste servidor">
+        <div class="vel-xp-stat"><span>✦ STATUS</span><strong>${status?'Ativado':'Desativado'}</strong><small>Somente neste servidor</small></div>
+        <div class="vel-xp-stat"><span>👥 PARTICIPANTES</span><strong>${participants.toLocaleString('pt-BR')}</strong><small>Perfis XP neste servidor</small></div>
+        <div class="vel-xp-stat"><span>★ PROGRESSÃO</span><strong>1.000 XP</strong><small>Para cada nível</small></div>
+        <div class="vel-xp-stat"><span>◷ COOLDOWN</span><strong>${cooldown}s</strong><small>Por membro, por servidor</small></div>
+      </section>
+      <div class="vel-xp-layout">
+        ${card('Sistema de experiência','Escolha como o XP funciona neste servidor.',form,'✦')}
+        <aside class="vel-xp-info">
+          <h2>Como funciona?</h2>
+          <p>Mensagens elegíveis acumulam XP, respeitando o cooldown individual. Cada <strong>1.000 XP</strong> vale um nível.</p>
+          <div class="vel-xp-example" aria-label="Exemplo de progresso">
+            <span>EXEMPLO DE PROGRESSO</span><div class="vel-xp-example-level"><strong>Nível 2</strong><small>450 / 1.000 XP</small></div>
+            <div class="vel-xp-track"><span style="width:45%"></span></div>
+            <small>2.450 XP acumulados · apenas ilustração</small>
+          </div>
+          <p class="vel-xp-note">💜 Seu nível no servidor A não altera seu nível no servidor B. Os VelCoins e o Daily continuam globais e separados do XP.</p>
+        </aside>
+      </div>`;
+  }
   const x=sections[section]||sections.aparencia;
   const common=`<form method="POST" action="/dashboard/${guild.id}/save/${section}" class="config-form"><input type="hidden" name="csrf" value="${esc(csrf)}"/>${x.fields.join('')}<div class="form-actions"><button class="btn" type="submit">✦ Salvar alterações</button><small>As alterações serão aplicadas na próxima sincronização com o bot.</small></div></form>`;
   let extra='';
