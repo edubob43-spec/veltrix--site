@@ -89,7 +89,7 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     const sanitizedSettings=Object.fromEntries(Object.keys(DEFAULT_SETTINGS).map(k=>[k,raw.settings?.[k]??DEFAULT_SETTINGS[k]]));
     const roleIds=new Set(raw.roles.slice(0,500).filter(r=>safeId(r.id)).map(r=>String(r.id)));
     const xpRoleBonuses=[];
-    for(const bonus of (Array.isArray(raw.settings?.xpRoleBonuses)?raw.settings.xpRoleBonuses:[]).slice(0,20){
+    for(const bonus of (Array.isArray(raw.settings?.xpRoleBonuses)?raw.settings.xpRoleBonuses:[]).slice(0,20)){
       const roleId=String(bonus?.roleId||''),amount=bonus?.amount;
       if(!safeId(roleId)||roleId===raw.id||!roleIds.has(roleId)||!Number.isInteger(amount)||amount<1||amount>1000||xpRoleBonuses.some(x=>x.roleId===roleId))continue;
       xpRoleBonuses.push({roleId,amount});
