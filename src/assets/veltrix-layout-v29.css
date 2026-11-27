@@ -55,3 +55,7 @@
   box-shadow: 0 0 8px rgba(157, 113, 232, .25);
 }
 .vel-footer-v29 .vel-footer-credit { font-weight: 500; }
+
+/* Acesso discreto ao opt-out da vitrine, sem ocupar menu nem a faixa de fotos. */
+.vel-footer-privacy{color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;opacity:.78}
+.vel-footer-privacy:hover,.vel-footer-privacy:focus-visible{opacity:1;color:#d9fff7}
