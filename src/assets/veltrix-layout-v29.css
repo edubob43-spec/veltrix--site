@@ -73,7 +73,10 @@ body.dashboard-page .vel-sidebar-v31 .serverchip{
   background:rgba(118,80,162,.12);
 }
 body.dashboard-page .vel-sidebar-v31 .servericon{
-  flex:0 0 33px;width:33px;height:33px;font-size:16px;border-radius:9px;
+  flex:0 0 33px;width:33px;height:33px;font-size:16px;border-radius:9px;overflow:hidden;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-server-image{
+  width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit;
 }
 body.dashboard-page .vel-sidebar-v31 .serverchip>div:last-child{min-width:0}
 body.dashboard-page .vel-sidebar-v31 .serverchip small{
