@@ -3,6 +3,9 @@
  const root=document.getElementById('daily-root');if(!root)return;
  const $=id=>document.getElementById(id);
  let previousPending=root.dataset.pending==='1';
+ let hadValidResponse=false;
+ let lastSuccessfulPoll=0;
+ const pollStarted=Date.now();
  const fmt=n=>Math.trunc(Number(n)||0).toLocaleString('pt-BR');
  const brDay=t=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(t);
  const reveal=(amount, claimed)=>{
@@ -33,7 +36,10 @@
      }else{$('daily-reset').textContent='Reinicia todos os dias à meia-noite, horário de Brasília.';}
      $('daily-claim').disabled=loading || s.claimedToday || !data.connected;
      $('daily-claim').textContent=loading?'⏳ Processando...':s.claimedToday?'✓ Daily resgatado':'🎁 Resgatar daily';
-   }else{$('daily-claim').disabled=true;}
+   }else{
+     $('daily-claim').disabled=loading || !data.connected;
+     $('daily-claim').textContent=loading?'⏳ Processando...':'🎁 Resgatar daily';
+   }
    // Antes do resgate: segredo. Depois: resultado real da conta (ou do job recém-concluído).
    const recent=data.result?.ok && !data.result?.result?.alreadyClaimed &&
      (!Number.isSafeInteger(data.result.at)||brDay(data.result.at)===brDay(Date.now())) ? data.result.result : null;
@@ -50,13 +56,29 @@
      }else{$('daily-message').textContent='⚠️ '+(data.result.error||'Falha ao resgatar.');}
    }else if(loading){$('daily-message').textContent='⏳ Resgate enviado, aguardando o KataBump...';}
    else if(s){$('daily-message').textContent=s.claimedToday?'Daily resgatado hoje!':'Disponível para resgatar agora.';}
-   else{$('daily-message').textContent='Sincronizando sua conta com a Veltrix...';}
+   else if(!data.connected){$('daily-message').textContent='⚠️ Bot desconectado. Resgate indisponível por enquanto.';}
+   else{$('daily-message').textContent='Seu saldo ainda não foi recebido. Você pode tentar resgatar; o bot confirmará o resultado.';}
    previousPending=loading;
  };
  const poll=async()=>{
-   try{const response=await fetch('/api/me/daily',{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store'});
-     if(response.ok)update(await response.json());
-   }catch{}
+   try{
+     const response=await fetch('/api/me/daily',{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(9000)});
+     if(response.status===401 || response.redirected){
+       $('daily-message').textContent='Sua sessão expirou. Entre com Discord novamente para resgatar.';
+       $('daily-claim').disabled=true;
+       return;
+     }
+     if(!response.ok)throw new Error('HTTP '+response.status);
+     const data=await response.json();
+     hadValidResponse=true;
+     lastSuccessfulPoll=Date.now();
+     update(data);
+   }catch{
+     if(Date.now()-lastSuccessfulPoll>15000 && Date.now()-pollStarted>15000){
+       $('daily-message').textContent='⚠️ Não foi possível consultar a Veltrix. Verifique sua conexão e atualize a página.';
+       $('daily-claim').disabled=true;
+     }
+   }
  };
  poll();setInterval(()=>{if(!document.hidden)poll();},4500);
 })();

@@ -15,6 +15,7 @@ import { DEFAULT_SETTINGS } from './defaults.js';
 import { cleanProfile, ownedBadges } from './profile-contract.js';
 import { renderProfileEditor } from './profile-editor.js';
 import { renderDailyPage } from './daily-page.js';
+import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
@@ -100,10 +101,9 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
   if (req.body.dailyStatuses && typeof req.body.dailyStatuses==='object' && !Array.isArray(req.body.dailyStatuses)) {
     for(const [uid,value] of Object.entries(req.body.dailyStatuses).slice(0,120)) {
       if(!safeId(uid) || !bridge.dailyWatch.has(uid) || !value || typeof value!=='object')continue;
-      const fields=['wallet','bank','streak','nextBonusIn','resetAt','asOf','lastClaimAt'];
-      if(fields.some(k=>!Number.isSafeInteger(value[k])||value[k]<0))continue;
-      if(typeof value.claimedToday!=='boolean'||!/^\d{4}-\d{2}-\d{2}$/.test(String(value.dayKey)))continue;
-      bridge.dailyStatuses.set(uid,{...Object.fromEntries(fields.map(k=>[k,value[k]])),claimedToday:value.claimedToday,dayKey:value.dayKey,receivedAt:Date.now()});
+      const parsed=parseDailyStatus(value);
+      if(!parsed)continue;
+      bridge.dailyStatuses.set(uid,parsed);
     }
   }
   bridge.botOnline=!!req.body.botOnline;
@@ -124,6 +124,7 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
       bridge.results.set(resultKey,{ok:!!completed.ok,error:safeError(completed.error),result:details,at:Date.now(),action:job.action||job.type});bridge.jobs.delete(job.id);
     }
   }
+  expireDailyJobs();
   for(const job of bridge.jobs.values())if(Date.now()-job.createdAt>30*60*1000)bridge.jobs.delete(job.id);
   for(const [uid,created] of bridge.profilePending)if(Date.now()-created>35*60*1000)bridge.profilePending.delete(uid);
   for(const [key,info] of bridge.results)if(Date.now()-info.at>60*60*1000)bridge.results.delete(key);
@@ -307,7 +308,18 @@ async function personalFlags(req){
 }
 
 // Daily individual: o usuário autenticado não escolhe o userId nem o valor recebido.
-const brDayNow = () => new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(Date.now());
+// Trabalhos não confirmados não podem manter o botão bloqueado indefinidamente.
+function expireDailyJobs() {
+  const now=Date.now();
+  for(const job of bridge.jobs.values()) {
+    if(job.type!=='daily-claim' || now-job.createdAt<120000)continue;
+    bridge.jobs.delete(job.id);
+    bridge.results.set(`daily:${job.userId}`,{
+      ok:false,error:'O bot não confirmou o resgate. Confira seu saldo no Discord antes de tentar novamente.',
+      at:now,action:'daily-claim'
+    });
+  }
+}
 function watchDaily(uid) {
   const first=!bridge.dailyWatch.has(uid),prev=bridge.dailyWatch.get(uid)||0;
   bridge.dailyWatch.set(uid,Date.now());
@@ -318,23 +330,25 @@ function dailyState(uid){
   const stat=bridge.dailyStatuses.get(uid);
   return stat && Date.now()-stat.receivedAt<60000 && stat.dayKey===brDayNow()?stat:null;
 }
-function dailyPending(uid){return [...bridge.jobs.values()].some(j=>j.type==='daily-claim'&&j.userId===uid);}
+function dailyPending(uid){expireDailyJobs();return [...bridge.jobs.values()].some(j=>j.type==='daily-claim'&&j.userId===uid);}
 app.get('/me/daily',logged,(req,res)=>{
   const uid=req.session.user.id;
   watchDaily(uid);
   const stat=dailyState(uid),pending=dailyPending(uid);
   const result=bridge.results.get(`daily:${uid}`);
-  const html=renderDailyPage({user:req.session.user,csrf:req.session.csrf,connected:connected(),status:stat,pending,result:result && Date.now()-result.at<120000?result:null});
+  const html=renderDailyPage({user:req.session.user,csrf:req.session.csrf,connected:connected(),status:stat,pending,result:result && Date.now()-result.at<180000?result:null});
   res.set('Cache-Control','no-store').send(page('Meu Daily',html,{user:req.session.user}));
 });
 app.get('/api/me/daily',logged,(req,res)=>{
   const uid=req.session.user.id;watchDaily(uid);
   const result=bridge.results.get(`daily:${uid}`);
-  res.set('Cache-Control','no-store').json({connected:connected(),status:dailyState(uid),pending:dailyPending(uid),result:result && Date.now()-result.at<120000?result:null});
+  const pending=dailyPending(uid);
+  const recent=bridge.results.get(`daily:${uid}`);
+  res.set('Cache-Control','no-store').json({connected:connected(),status:dailyState(uid),pending,result:recent && Date.now()-recent.at<180000?recent:null});
 });
 app.post('/me/daily/claim',logged,checkCsrf,(req,res)=>{
   const uid=req.session.user.id;
-  if(!connected())return res.status(503).send(page('Veltrix offline','<div class="alert">Aguarde a conexão do bot com o KataBump.</div><a class="btn" href="/me/daily">Voltar</a>',{user:req.session.user}));
+  if(!connected())return res.status(503).send(page('Veltrix offline','<div class="alert">O bot está desconectado. O resgate não foi enviado. Tente novamente quando estiver online.</div><a class="btn" href="/me/daily">Voltar</a>',{user:req.session.user}));
   // O comando .daily no bot efetua a verificação definitiva. Este é apenas um filtro visual.
   if(dailyState(uid)?.claimedToday)return res.redirect('/me/daily');
   try{

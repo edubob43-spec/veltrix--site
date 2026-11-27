@@ -33,7 +33,8 @@ export const DAILY_CSS=`
 export function renderDailyPage({user,csrf,connected,status,pending,result}) {
   const balance=status||null;
   const claimed=balance?.claimedToday===true;
-  const ready=!!connected&&!!balance;
+  // O saldo pode demorar a chegar. O bot valida o resgate; não bloqueie a tentativa por ausência do snapshot.
+  const ready=!!connected;
   const streak=Number(balance?.streak)||0;
   const progress=streak===0?0:(streak%7||7);
   const brDate = timestamp => new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(timestamp);
@@ -41,7 +42,7 @@ export function renderDailyPage({user,csrf,connected,status,pending,result}) {
   const claimedAmount=(claimed && Number.isSafeInteger(balance?.todayReward) ? balance.todayReward : 0) || (resultCurrentDay && result?.ok===true && !result?.result?.alreadyClaimed && Number.isSafeInteger(result?.result?.amount) ? result.result.amount : 0);
   const claimedBonus=(claimed && Number.isSafeInteger(balance?.todayBonus) ? balance.todayBonus : 0) || (resultCurrentDay && result?.ok===true && Number.isSafeInteger(result?.result?.bonus) ? result.result.bonus : 0);
   const revealed=claimedAmount>0;
-  const note=!connected?'A Veltrix está offline; aguarde a conexão com o KataBump.':!balance?'Sincronizando seu saldo com a Veltrix...':pending?'Processando seu resgate no KataBump...':claimed?'O daily de hoje já foi coletado! Volte à 00h (Brasília).':'Disponível para coletar agora!';
+  const note=!connected?'Bot desconectado. O resgate está indisponível no momento.':pending?'Resgate enviado ao bot. Aguardando confirmação...':claimed?'Daily de hoje resgatado. Volte à 00h (Brasília).':!balance?'Saldo ainda indisponível. Você pode tentar resgatar; o bot verifica sua conta.':'Disponível para coletar agora!';
   const outcome=result && resultCurrentDay && !pending?result.ok===true?(result.result?.alreadyClaimed?'Você já havia coletado o daily de hoje.':`🎉 Resgatado: +${fmt(result.result?.amount)} VelCoins${Number(result.result?.bonus)?` + ${fmt(result.result.bonus)} VC de sequência!`:''}`):`⚠️ Não foi possível resgatar: ${esc(result.error||'tente novamente.')}`:'';
   return `<div class="daily-shell" id="daily-root" data-pending="${pending?'1':'0'}">
     <div class="daily-head"><div><div class="daily-eyebrow">VELTRIX · ECONOMIA GLOBAL</div><h1>Seu <span class="gradient-text">Daily</span> 🎁</h1><p>Entre com Discord, receba suas VelCoins e mantenha sua sequência. O saldo é o mesmo em todos os servidores.</p></div><a class="daily-back" href="/dashboard">← Meus servidores</a></div>
@@ -52,7 +53,7 @@ export function renderDailyPage({user,csrf,connected,status,pending,result}) {
     <p class="daily-muted" id="daily-reset">Reinicia todos os dias à meia-noite, horário de Brasília.</p></section>
     <section class="daily-panel"><span class="daily-kicker">💰 SUA CARTEIRA</span><h2>${esc(user.global_name||user.username||'Seu perfil')}</h2><p>VelCoins globais, sincronizadas com o bot.</p>
     <div class="daily-balance"><div class="daily-stat"><span>👛 Carteira</span><strong id="daily-wallet">${balance?fmt(balance.wallet):'—'}</strong></div><div class="daily-stat"><span>🏦 Banco</span><strong id="daily-bank">${balance?fmt(balance.bank):'—'}</strong></div></div>
-    <div class="daily-progress-area"><span class="daily-kicker">🔥 SEQUÊNCIA</span><h2 class="daily-streak-heading"><span id="daily-streak">${streak}</span> dia(s)</h2><div class="daily-streak" id="daily-streak-dots">${Array.from({length:7},(_,i)=>`<div class="daily-day ${i<progress?'active':''}"><span class="flame">${i<progress?'🔥':'✦'}</span>${i+1}</div>`).join('')}</div><span class="daily-muted" id="daily-next-bonus">${balance?`Próximo bônus em ${balance.nextBonusIn} resgate(s).`:'O progresso aparecerá após sincronizar.'}</span></div></section>
+    <div class="daily-progress-area"><span class="daily-kicker">🔥 SEQUÊNCIA</span><h2 class="daily-streak-heading"><span id="daily-streak">${streak}</span> dia(s)</h2><div class="daily-streak" id="daily-streak-dots">${Array.from({length:7},(_,i)=>`<div class="daily-day ${i<progress?'active':''}"><span class="flame">${i<progress?'🔥':'✦'}</span>${i+1}</div>`).join('')}</div><span class="daily-muted" id="daily-next-bonus">${balance?`Próximo bônus em ${balance.nextBonusIn} resgate(s).`:'Seu progresso aparecerá quando o bot enviar o saldo.'}</span></div></section>
     <section class="daily-panel daily-extra"><span class="daily-extra-icon">🎬</span><span class="daily-kicker">BÔNUS EXTRA</span><h2>Mais VelCoins assistindo anúncio?</h2><p>Queremos adicionar um anúncio recompensado opcional. O benefício ficará disponível quando uma rede aprovar o uso e confirmar cada visualização pelo servidor.</p><button class="daily-btn daily-locked" disabled title="Aguardando provedor de anúncios compatível">🔒 Ver anúncio — em breve</button><div class="daily-muted daily-extra-footer">O daily grátis continua funcionando normalmente, sem anúncio.</div></section>
     <section class="daily-panel"><span class="daily-extra-icon">💜</span><span class="daily-kicker">CONTA VELTRIX</span><h2>Uma carteira em qualquer servidor.</h2><p>Seu daily pelo site usa o mesmo ID e as mesmas regras de <strong>.daily</strong> no Discord. Resgatou em um lugar? Já estará resgatado no outro.</p></section></div>
     <script src="/assets/veltrix-daily-v1.js" defer></script>
