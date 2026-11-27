@@ -151,7 +151,7 @@ function themeChoice(t,selected){
 function bannerChoice(b,selected){
  const v=esc(b.id);return `<label class="pc-choice"><input type="radio" name="banner" value="${v}" ${selected===b.id?'checked':''}><span><img class="pc-banner-thumb" src="${bannerUrl(b.id)}" alt="" loading="lazy"><span class="pc-banner-title">${esc(b.name)}</span></span></label>`;
 }
-export function renderProfileEditor({user, settings={}, flags=0, csrf, connected, message=''}){
+export function renderProfileEditor({user, settings={}, flags=0, csrf, connected, message='', pending=false}){
  const pref=cleanProfile(settings);
  const owned=ownedBadges(flags);
  const checked=pref.badges===null?owned.slice(0,5).map(x=>x.id):pref.badges;
@@ -161,7 +161,7 @@ export function renderProfileEditor({user, settings={}, flags=0, csrf, connected
  const nickname=esc(user.global_name||user.username||'Membro');
  const bio=pref.bio||'';
  return `<div class="my-profile"><div class="pc-heading"><div><div class="pc-eyebrow">PERFIL VELTRIX · PERSONALIZAÇÃO</div><h1>Monte seu <span class="gradient-text">cartão.</span></h1><p>Escolha um layout inspirado nos modelos que você gosta, selecione o banner e confira a prévia. Sem efeitos neon no cartão.</p></div><a class="btn btn-secondary" href="/dashboard">Meus servidores</a></div>
- ${message?`<div class="alert" role="status">${esc(message)}</div>`:''}
+ ${message?`<div class="alert" role="status" id="pc-profile-status" data-profile-pending="${pending?'true':'false'}">${esc(message)}</div>`:''}
  ${!connected?'<div class="alert">Aguardando o bot no KataBump. Você pode experimentar o visual, mas salvar exige sincronização ativa.</div>':''}
  <div class="pc-grid">
  <form class="pc-editor" method="POST" action="/me/perfil" id="pc-editor">
@@ -182,5 +182,5 @@ export function renderProfileEditor({user, settings={}, flags=0, csrf, connected
    <div class="pc-bio"><div class="pc-bio-label">◇ SOBRE MIM</div><p id="pc-bio-preview">${esc(bio)||'Sua descrição vai aparecer aqui…'}</p><span class="pc-decor-corner" aria-hidden="true"></span></div>
   </div></div>
   <div class="pc-preview-note">O nome será o <b>apelido usado no servidor</b>. Nível, XP, casamento e avatar serão os dados reais no Discord. A prévia usa valores de exemplo apenas para mostrar o visual. Não inclui conquistas nem barra de XP.</div>
- </div></div><script src="/assets/veltrix-profile-editor-v52.js" defer></script></div>`;
+ </div></div><script src="/assets/veltrix-profile-editor-v52.js" defer></script>${pending?'<script src="/assets/veltrix-profile-status-v1.js" defer></script>':''}</div>`;
 }
