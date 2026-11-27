@@ -161,4 +161,4 @@ function errorRedirect(res,id,section,msg){return res.redirect(`/dashboard/${id}
 function requestPath(req){return req.originalUrl||'/';}
 
 
-export { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS };
+export { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, accountSidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS };
