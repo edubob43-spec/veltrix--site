@@ -16,6 +16,7 @@ import { cleanProfile, ownedBadges } from './profile-contract.js';
 import { renderProfileEditor } from './profile-editor.js';
 import { renderDailyPage } from './daily-page.js';
 import { renderGuildAvatar } from './guild-icons.js';
+import { createShowcaseStore, renderCommunityShowcase } from './community-showcase.js';
 import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
@@ -44,6 +45,7 @@ const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
 const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), dailyWatch:new Map(), dailyStatuses:new Map(),lastSeen:0, botOnline:false };
+const showcaseStore=createShowcaseStore(env.VELTRIX_SHOWCASE_FILE||undefined);
 // Pedidos de sincronização HTTPS aguardando novos trabalhos.
 // Ao salvar uma configuração, acordamos o bot imediatamente.
 const bridgeWaiters = new Set();
@@ -164,35 +166,68 @@ app.use('/auth',limiter);app.use('/dashboard',limiter);app.use('/me',limiter);
 app.use('/api/me',rateLimit({windowMs:15*60*1000,limit:300,standardHeaders:'draft-7',legacyHeaders:false}));
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
 app.get('/',(req,res)=>{
-  const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Aguardando sincronização do bot';
+  const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Painel sincronizando com o bot';
   const dashboard=req.session.user?'/dashboard':'/auth/login';
   const features=[
-    ['🎫','Tickets','Organize atendimentos com canais privados, equipe e transcrições.'],
-    ['👋','Boas-vindas','Receba os membros com mensagens no seu estilo.'],
-    ['📜','Logs','Acompanhe eventos do servidor em um canal reservado.'],
-    ['🤝','Parcerias','Gerencie pedidos, revisões e anúncios.'],
-    ['🔐','Permissões','Ajuste visibilidade e envio de mensagens por cargo.'],
-    ['🌟','Identidade da Veltrix','Avatar e apelido exclusivos para cada servidor.']
+    ['🎫','Tickets','Atendimento organizado com canais privados, equipe e transcrições.'],
+    ['👋','Boas-vindas','Receba novos membros do seu jeito.'],
+    ['📜','Logs','Acompanhe os principais eventos do servidor.'],
+    ['🤝','Parcerias','Organize solicitações e anúncios da sua comunidade.'],
+    ['🔐','Permissões','Cuide do acesso e da organização dos canais.'],
+    ['🌟','Identidade da Veltrix','Personalize avatar e apelido em cada servidor.']
   ];
   const cards=features.map(([emoji,title,desc])=>`<a class="vel-feature" href="${dashboard}"><span class="vel-feature-icon">${emoji}</span><strong>${title}</strong><small>${desc}</small></a>`).join('');
-  const html=`${loginBanner()}<div class="landing">
-    <section class="vel-hero">
-      <div class="vel-copy"><div class="vel-kicker">✦ SUA COMUNIDADE, SEU UNIVERSO</div>
-        <h1>Seu servidor.<span class="gradient-text"><br>Seu universo.</span></h1>
-        <p>Conheça a Veltrix: seu painel para cuidar dos tickets, boas-vindas, logs, permissões e personalização de cada servidor.</p>
-        <div class="vel-online"><span class="vel-pulse"></span>${esc(status)}</div>
-        <div class="vel-actions"><a class="btn btn-large" href="${dashboard}">✦ Abrir meu painel ↗</a><a class="vel-secondary" href="#recursos">Explorar recursos ↓</a></div>
+  const currentUser=req.session.user;
+  const showcaseNotice={
+    added:'Pronto! Sua foto foi adicionada à vitrine da comunidade.',
+    removed:'Sua foto foi removida da vitrine.',
+    consent:'Marque a autorização antes de entrar na vitrine.',
+    error:'Não foi possível atualizar a vitrine agora. Tente novamente.'
+  }[String(req.query.showcase||'')]||'';
+  const community=renderCommunityShowcase({
+    members:showcaseStore.list(),
+    user:currentUser?{...currentUser,optedIn:showcaseStore.contains(currentUser.id)}:null,
+    csrf:req.session.csrf||'',
+    notice:showcaseNotice
+  });
+  const html=`${loginBanner()}<div class="landing landing-v30">
+    <section class="vel-home-hero" aria-labelledby="vel-home-title">
+      <div class="vel-home-art">
+        <div class="vel-home-aura" aria-hidden="true"></div>
+        <img class="vel-mascot vel-home-mascot" src="/assets/veltrix-mascote-animada-v24.gif"
+          data-animated="/assets/veltrix-mascote-animada-v24.gif"
+          data-still="/assets/veltrix-mascot-recortada-v22.webp"
+          width="580" height="690"
+          alt="Mascote oficial da Veltrix, personagem anime de cabelo laranja e roupa turquesa"
+          fetchpriority="high">
+        <span class="vel-home-star one" aria-hidden="true">✦</span>
+        <span class="vel-home-star two" aria-hidden="true">♡</span>
       </div>
-      <div class="vel-mascot-wrap" aria-label="Mascote oficial da Veltrix">
-        <div class="vel-aura"></div><div class="vel-orbit"></div>
-        <img class="vel-mascot" src="/assets/veltrix-mascote-animada-v24.gif" data-animated="/assets/veltrix-mascote-animada-v24.gif" data-still="/assets/veltrix-mascot-recortada-v22.webp" width="362" height="482" alt="Mascote Veltrix de anime com cabelo laranja e roupa turquesa, animada com movimento suave" fetchpriority="high">
-        <span class="vel-floating-pill a">✦ <b>Sua</b> assistente</span><span class="vel-floating-pill b">✧ Seu servidor, seu <b>estilo</b></span>
+      <div class="vel-home-copy">
+        <span class="vel-home-eyebrow">✧ SEU SERVIDOR, SEU UNIVERSO</span>
+        <h1 class="vel-home-title" id="vel-home-title"><span class="vel-home-hello">Oi, eu sou a</span><span class="vel-home-name">Veltrix!</span></h1>
+        <p class="vel-home-subtitle">Sua companheira no Discord para cuidar do servidor, receber seus amigos e deixar sua comunidade com a sua cara.</p>
+        <div class="vel-home-actions">
+          <a class="vel-home-primary" href="${dashboard}">✦ Abrir meu painel</a>
+          <a class="vel-home-secondary" href="#recursos">Saiba mais ↓</a>
+          <a class="vel-home-daily" href="/me/daily">🎁 Meu Daily</a>
+        </div>
+        <div class="vel-home-status"><span class="vel-home-status-dot" aria-hidden="true"></span>${esc(status)}</div>
       </div>
+      <a class="vel-home-down" href="#comunidade" aria-label="Conhecer a comunidade Veltrix">⌄</a>
     </section>
-    <section id="recursos" aria-labelledby="recursos-titulo"><div class="vel-section-title"><div class="vel-kicker">✦ CRIE DO SEU JEITO</div><h2 id="recursos-titulo">Tudo sob seu controle</h2><p>Gerencie os sistemas essenciais de cada servidor com a identidade única da Veltrix.</p></div><div class="vel-features">${cards}</div></section>
-    <section class="vel-lower-cta"><div><h2>Seu servidor merece mais.</h2><p>Entre com Discord para abrir o painel e escolher seu servidor.</p></div><a class="btn btn-large" href="${dashboard}">Começar agora ↗</a></section>
+    ${community}
+    <section class="vel-resources-v30" id="recursos" aria-labelledby="recursos-titulo">
+      <div class="vel-section-title">
+        <div class="vel-home-eyebrow">✦ CRIE DO SEU JEITO</div>
+        <h2 id="recursos-titulo">Muito mais que um simples bot</h2>
+        <p>Os recursos essenciais para você cuidar de cada detalhe do seu servidor, tudo em um só painel.</p>
+      </div>
+      <div class="vel-features">${cards}</div>
+      <section class="vel-lower-cta"><div><h2>Seu servidor merece mais.</h2><p>Entre com Discord para escolher seu servidor e começar.</p></div><a class="btn btn-large" href="${dashboard}">Começar agora ↗</a></section>
+    </section>
   </div>`;
-  return res.set('Cache-Control','no-store').send(page('Início',html,{user:req.session.user}));
+  return res.set('Cache-Control','no-store').send(page('Início',html,{user:currentUser}));
 });
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
@@ -358,6 +393,26 @@ app.post('/me/daily/claim',logged,checkCsrf,(req,res)=>{
     watchDaily(uid);
     return res.redirect('/me/daily?queued=1');
   }catch(e){return res.status(429).send(page('Resgate já em processamento',`<div class="alert">${esc(safeError(e.message))}</div><a class="btn" href="/me/daily">Voltar</a>`,{user:req.session.user}));}
+});
+// Vitrine pública: somente membros que deram consentimento explícito via OAuth2.
+// O userId nunca vem do formulário, somente da sessão autenticada.
+app.post('/me/showcase',logged,checkCsrf,(req,res)=>{
+  try {
+    const action=String(req.body.showcaseAction||'');
+    if(action==='join') {
+      if(req.body.consent!=='yes')return res.redirect('/?showcase=consent#comunidade');
+      showcaseStore.join(req.session.user);
+      return res.redirect('/?showcase=added#comunidade');
+    }
+    if(action==='leave') {
+      showcaseStore.leave(req.session.user.id);
+      return res.redirect('/?showcase=removed#comunidade');
+    }
+    return res.status(400).send('Ação inválida.');
+  } catch(error) {
+    console.warn('[Vitrine Veltrix]',safeError(error.message));
+    return res.redirect('/?showcase=error#comunidade');
+  }
 });
 app.get('/me/perfil',logged,async(req,res)=>{
   const uid=req.session.user.id;
