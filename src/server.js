@@ -45,7 +45,7 @@ const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
 const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), dailyWatch:new Map(), dailyStatuses:new Map(),lastSeen:0, botOnline:false };
-const showcaseStore=createShowcaseStore(env.VELTRIX_SHOWCASE_DATABASE_URL||env.DATABASE_URL||'');
+const showcaseStore=createShowcaseStore(env.VELTRIX_SHOWCASE_DATABASE_URL||env.DATABASE_URL||'',{optOutSecret:sessionSecret});
 // Pedidos de sincronização HTTPS aguardando novos trabalhos.
 // Ao salvar uma configuração, acordamos o bot imediatamente.
 const bridgeWaiters = new Set();
@@ -178,9 +178,9 @@ app.get('/',async(req,res)=>{
   ];
   const cards=features.map(([emoji,title,desc])=>`<a class="vel-feature" href="${dashboard}"><span class="vel-feature-icon">${emoji}</span><strong>${title}</strong><small>${desc}</small></a>`).join('');
   const currentUser=req.session.user;
-  // Vitrine visível somente após login e quando houver participantes com consentimento.
+  // A vitrine e publica; somente perfis cadastrados apos aviso de login sao exibidos.
   let members=[];
-  if(currentUser && showcaseStore.isConfigured()) {
+  if(showcaseStore.isConfigured()) {
     try { members=await showcaseStore.list(); }
     catch(e) { console.warn('[Vitrine Veltrix] Consulta indisponível:',safeError(e.message)); }
   }
@@ -208,6 +208,7 @@ app.get('/',async(req,res)=>{
           <a class="vel-home-daily" href="/me/daily">🎁 Meu Daily</a>
         </div>
         <div class="vel-home-status"><span class="vel-home-status-dot" aria-hidden="true"></span>${esc(status)}</div>
+        <p class="vel-home-privacy">Ao entrar com Discord, seu nome e avatar podem aparecer publicamente na vitrine. Você pode <a href="/me/vitrine">ocultar sua foto quando quiser</a>.</p>
       </div>
       <a class="vel-home-down" href="${community?'#comunidade':'#recursos'}" aria-label="Explorar o site Veltrix">⌄</a>
     </section>
@@ -227,7 +228,7 @@ app.get('/',async(req,res)=>{
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
-  req.session.oauthReturnTo=req.query.next==='showcase'?'/#comunidade':'/dashboard';
+  req.session.oauthReturnTo=req.query.next==='showcase'?'/me/vitrine':'/dashboard';
   req.session.save(e=>{
     if(e)return res.status(500).send('Falha ao salvar sessão.');
     const p=new URLSearchParams({client_id:clientId,redirect_uri:redirectUri,response_type:'code',scope:'identify guilds',state});
@@ -240,7 +241,7 @@ app.get('/auth/callback',async(req,res)=>{
   if(!expected||state.length!==expected.length||!timingSafeEqual(Buffer.from(state),Buffer.from(expected)))return res.status(403).send('Estado OAuth inválido. Faça login de novo.');
   if(req.query.iss && req.query.iss!=='https://discord.com')return res.status(403).send('Emissor OAuth inválido.');
   const code=String(req.query.code||'');if(!code)return res.status(400).send('Código OAuth ausente.');
-  const oauthReturnTo=req.session.oauthReturnTo==='/#comunidade'?'/#comunidade':'/dashboard';
+  const oauthReturnTo=req.session.oauthReturnTo==='/me/vitrine'?'/me/vitrine':'/dashboard';
   delete req.session.oauthState;
   try {
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
@@ -251,6 +252,12 @@ app.get('/auth/callback',async(req,res)=>{
       token=await r.json();
       const u=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`},signal:ctl.signal});
       if(!u.ok)throw Error(`Discord user HTTP ${u.status}`);user=await u.json();
+      // Cadastro automatico somente em novos logins, com aviso na home.
+      // Quem ocultou a foto nao e recadastrado.
+      if(showcaseStore.isConfigured()){
+        try{await showcaseStore.autoJoin(user);}
+        catch(error){console.warn('[Vitrine Veltrix] Registro no login indisponivel:',safeError(error.message));}
+      }
     }finally{clearTimeout(timer);}
     req.session.regenerate(e=>{
       if(e)return res.status(500).send('Erro ao iniciar a sessão.');
@@ -394,9 +401,9 @@ app.post('/me/daily/claim',logged,checkCsrf,(req,res)=>{
 // O usuário gerencia a própria foto em uma página privada mesmo quando a galeria está vazia.
 app.get('/me/vitrine',logged,async(req,res)=>{
   const messages={
-    added:'Sua foto foi salva! Ela aparecerá na galeria para pessoas logadas.',
-    removed:'Sua foto foi removida da galeria.',
-    consent:'Marque a autorização antes de participar.',
+    added:'Sua foto foi habilitada na vitrine pública.',
+    removed:'Sua foto foi ocultada e não voltará automaticamente em outros logins.',
+    consent:'Use o botão para voltar a exibir sua foto.',
     error:'Não foi possível salvar agora. Confira a conexão com o banco de dados.'
   };
   let configured=showcaseStore.isConfigured(),optedIn=false;
@@ -417,7 +424,6 @@ app.post('/me/showcase',logged,checkCsrf,async(req,res)=>{
   try {
     const action=String(req.body.showcaseAction||'');
     if(action==='join'){
-      if(req.body.consent!=='yes')return res.redirect('/me/vitrine?status=consent');
       await showcaseStore.join(req.session.user);
       return res.redirect('/me/vitrine?status=added');
     }

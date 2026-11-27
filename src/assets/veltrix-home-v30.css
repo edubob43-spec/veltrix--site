@@ -185,3 +185,42 @@ body:not(.landing-page) .vel-showcase-notice{margin:12px 0}
 
 .vel-showcase-settings{max-width:720px;padding:26px}
 .vel-showcase-back{margin-top:20px}
+
+
+/* V3.2: a foto de cada pessoa aparece uma única vez. Nunca duplicamos avatares para preencher a largura. */
+body.landing-page .vel-community-window{
+  display:flex;align-items:center;justify-content:center;
+  min-height:165px;margin-top:28px;overflow:hidden;
+  -webkit-mask-image:none;mask-image:none;
+}
+body.landing-page .vel-community-track.is-one-at-a-time{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:155px;gap:0;padding:12px 0;
+  animation:none!important;transform:none!important;will-change:auto;
+}
+body.landing-page .vel-community-track.is-one-at-a-time .vel-community-person{
+  display:none;align-items:center;justify-content:center;min-width:130px;
+  flex:0 0 130px;gap:11px;
+}
+body.landing-page .vel-community-track.is-one-at-a-time .vel-community-person.is-current{
+  display:flex;
+}
+body.landing-page .vel-community-track.is-one-at-a-time.can-rotate:not(.is-paused) .vel-community-person.is-current{
+  animation:vel-community-one 4.8s ease-in-out 1;
+}
+@keyframes vel-community-one{
+  0%{transform:translateX(min(32vw,370px));opacity:0}
+  19%{transform:translateX(0);opacity:1}
+  75%{transform:translateX(0);opacity:1}
+  100%{transform:translateX(max(-32vw,-370px));opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  body.landing-page .vel-community-track.is-one-at-a-time .vel-community-person.is-current{animation:none!important;transform:none!important;opacity:1!important}
+}
+@media(max-width:520px){
+  body.landing-page .vel-community-window{min-height:140px}
+  body.landing-page .vel-community-track.is-one-at-a-time{min-height:130px}
+  body.landing-page .vel-community-track.is-one-at-a-time .vel-community-person{flex-basis:110px;min-width:110px}
+}
+.vel-home-privacy{max-width:530px;margin-top:12px;color:rgba(226,216,246,.76);font-size:11px;line-height:1.45;text-align:center}
+.vel-home-privacy a{color:#c2fff3;text-decoration:underline;text-underline-offset:2px}
