@@ -40,7 +40,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   </details>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
   const isLanding = title === 'Início';
   const particleField = `<div class="sparkfield" aria-hidden="true"><canvas class="vel-star-canvas" aria-hidden="true"></canvas></div>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=33"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=34"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
   ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer class="vel-footer-v29" aria-label="Créditos da Veltrix"><span class="vel-footer-name">Veltrix</span><span class="vel-footer-dot" aria-hidden="true"></span><span class="vel-footer-credit">by: thwedu</span>${isLanding?'<span class="vel-footer-dot" aria-hidden="true"></span><a class="vel-footer-privacy" href="/me/vitrine">Privacidade</a>':''}</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
 // A conta possui um painel próprio; as configurações são sempre por servidor.
@@ -119,46 +119,54 @@ function sectionHtml(guild,s,section,csrf,store){
       <div class="feature-grid">${nav.filter(x=>x[0]!=='geral').map(([k,n])=>`<a class="feature" href="/dashboard/${guild.id}/${k}"><span class="feature-emoji">${{aparencia:'🎨',boasvindas:'👋',logs:'📜',tickets:'🎫',niveis:'🏆',parcerias:'🤝',permissoes:'🔐',identidade:'🌟'}[k]}</span><strong>${esc(n)}</strong><small>Configurar módulo →</small></a>`).join('')}</div>`;
   }
   if(section==='niveis'){
-    // As configurações de XP já pertencem ao servidor selecionado.
-    // A chave de progresso no bot é guildId:userId; não mostrar dados globais aqui.
     const participants=Math.max(0,Math.trunc(Number(guild.stats?.xpProfiles)||0));
-    const cooldown=Number.isInteger(s.xpCooldown)&&s.xpCooldown>=10&&s.xpCooldown<=100?s.xpCooldown:60;
     const status=s.xpEnabled===true;
-    const options=[{id:'',name:'Não enviar avisos'},...textCh.filter(ch=>ch.id)];
-    const channelPicker=field('xpChannelId','Canal dos avisos de nível',s.xpChannelId,'text','Deixe sem canal para não enviar anúncios.',options);
+    const channelOptions=[{id:'',name:'Não enviar avisos'},...textCh.filter(ch=>ch.id)];
+    const channelPicker=field('xpChannelId','Canal dos avisos de nível',s.xpChannelId,'text','Deixe sem canal para não enviar anúncios.',channelOptions);
     const name=String(guild.name||'Servidor').trim();
-    const form=`<form method="POST" action="/dashboard/${esc(guild.id)}/save/niveis" class="config-form vel-xp-config-form">
-      <input type="hidden" name="csrf" value="${esc(csrf)}"/>
-      <label class="switch vel-xp-enabled"><span><strong>Ativar experiência por mensagens</strong><small>O XP deste servidor é independente do XP de outros servidores.</small></span><input type="checkbox" name="xpEnabled" ${status?'checked':''}/><i></i></label>
-      <div class="vel-xp-fields">${channelPicker}
-        <label class="field"><span>Cooldown entre mensagens pontuadas</span>
-          <input name="xpCooldown" type="number" inputmode="numeric" required min="10" max="100" step="1" value="${cooldown}"/>
-          <small>De 10 a 100 segundos, separado para cada membro neste servidor.</small>
-        </label>
-      </div>
-      <div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>As configurações serão enviadas ao bot no KataBump.</small></div>
-    </form>`;
-    return `<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>
-      <h1>Níveis <span class="gradient-text">& XP</span></h1><p>Configure a experiência de <strong>${esc(name)}</strong> sem afetar nenhum outro servidor.</p></div>
-      <section class="vel-xp-stats" aria-label="Resumo de XP neste servidor">
-        <div class="vel-xp-stat"><span>✦ STATUS</span><strong>${status?'Ativado':'Desativado'}</strong><small>Somente neste servidor</small></div>
-        <div class="vel-xp-stat"><span>👥 PARTICIPANTES</span><strong>${participants.toLocaleString('pt-BR')}</strong><small>Perfis XP neste servidor</small></div>
-        <div class="vel-xp-stat"><span>★ PROGRESSÃO</span><strong>1.000 XP</strong><small>Para cada nível</small></div>
-        <div class="vel-xp-stat"><span>◷ COOLDOWN</span><strong>${cooldown}s</strong><small>Por membro, por servidor</small></div>
-      </section>
-      <div class="vel-xp-layout">
-        ${card('Sistema de experiência','Escolha como o XP funciona neste servidor.',form,'✦')}
-        <aside class="vel-xp-info">
-          <h2>Como funciona?</h2>
-          <p>Mensagens elegíveis acumulam XP, respeitando o cooldown individual. Cada <strong>1.000 XP</strong> vale um nível.</p>
-          <div class="vel-xp-example" aria-label="Exemplo de progresso">
-            <span>EXEMPLO DE PROGRESSO</span><div class="vel-xp-example-level"><strong>Nível 2</strong><small>450 / 1.000 XP</small></div>
-            <div class="vel-xp-track"><span></span></div>
-            <small>2.450 XP acumulados · apenas ilustração</small>
-          </div>
-          <p class="vel-xp-note">💜 Seu nível no servidor A não altera seu nível no servidor B. Os VelCoins e o Daily continuam globais e separados do XP.</p>
-        </aside>
-      </div>`;
+    const configured=Array.isArray(s.xpRoleBonuses)?s.xpRoleBonuses.filter(x=>x&&/^\d{17,20}$/.test(String(x.roleId||''))&&Number.isInteger(x.amount)&&x.amount>=1&&x.amount<=1000).slice(0,20):[];
+    const roleOptions=[{id:'',name:'— Selecionar cargo —'},...([...guild.roles.cache.values()].filter(r=>r.id!==guild.id).sort((a,b)=>a.name.localeCompare(b.name)).map(r=>({id:r.id,name:'@ '+r.name+(r.managed?' · integrado':'')})))];
+    const renderBonusRow=(roleId='',amount='')=>{
+      const selected=String(roleId||'');
+      const options=[...roleOptions];
+      if(selected&&!options.some(o=>o.id===selected))options.push({id:selected,name:'Cargo indisponível ('+selected+')'});
+      const selectHtml=options.map(o=>'<option value="'+esc(o.id)+'"'+(o.id===selected?' selected':'')+'>'+esc(o.name)+'</option>').join('');
+      return '<div class="vel-xp-bonus-row" data-xp-bonus-row>'+
+        '<label class="field vel-xp-bonus-role"><span>Cargo</span><select name="xpBonusRoleId" aria-label="Cargo com bônus">'+selectHtml+'</select></label>'+
+        '<label class="field vel-xp-bonus-amount"><span>XP extra / mensagem</span><input name="xpBonusAmount" type="number" min="1" max="1000" step="1" value="'+esc(amount??'')+'" placeholder="Ex.: 5" inputmode="numeric"/></label>'+
+        '<button type="button" class="btn btn-secondary vel-xp-bonus-remove" data-xp-bonus-remove aria-label="Remover este bônus">Remover</button></div>';
+    };
+    const rows=(configured.length?configured:[{}]).map(x=>renderBonusRow(x.roleId||'',x.amount??'')).join('');
+    const form='<form method="POST" action="/dashboard/'+esc(guild.id)+'/save/niveis" class="config-form vel-xp-config-form">'+
+      '<input type="hidden" name="csrf" value="'+esc(csrf)+'"/>'+
+      '<label class="switch vel-xp-enabled"><span><strong>Ativar experiência por mensagens</strong><small>O XP deste servidor é independente do XP de outros servidores.</small></span><input type="checkbox" name="xpEnabled" '+(status?'checked':'')+'/><i></i></label>'+
+      '<div class="vel-xp-fields">'+channelPicker+'</div>'+
+      '<section class="vel-xp-bonus-section" aria-labelledby="vel-xp-bonus-title">'+
+        '<div class="vel-xp-bonus-head"><div><h3 id="vel-xp-bonus-title">Bônus por cargo</h3><p>1 XP base por mensagem válida. Quem tiver cargos configurados ganha o bônus de cada cargo; eles acumulam.</p></div><span class="vel-xp-bonus-limit" id="vel-xp-bonus-count">'+configured.length+'/20</span></div>'+
+        '<div class="vel-xp-bonus-list" id="vel-xp-bonus-list">'+rows+'</div>'+
+        '<button type="button" class="btn btn-secondary vel-xp-bonus-add" id="vel-xp-bonus-add">＋ Adicionar cargo</button>'+
+        '<template id="vel-xp-bonus-template">'+renderBonusRow('','')+'</template>'+
+      '</section>'+
+      '<div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>Os bônus serão aplicados após a sincronização com o bot no KataBump.</small></div>'+
+    '</form><script src="/assets/veltrix-xp-role-bonus-v34.js" defer></script>';
+    return '<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>'+
+      '<h1>Níveis <span class="gradient-text">& XP</span></h1><p>Configure a experiência de <strong>'+esc(name)+'</strong> sem afetar nenhum outro servidor.</p></div>'+
+      '<section class="vel-xp-stats" aria-label="Resumo de XP neste servidor">'+
+        '<div class="vel-xp-stat"><span>✦ STATUS</span><strong>'+(status?'Ativado':'Desativado')+'</strong><small>Somente neste servidor</small></div>'+
+        '<div class="vel-xp-stat"><span>👥 PARTICIPANTES</span><strong>'+participants.toLocaleString('pt-BR')+'</strong><small>Perfis XP neste servidor</small></div>'+
+        '<div class="vel-xp-stat"><span>★ XP BASE</span><strong>1 XP</strong><small>Por mensagem válida</small></div>'+
+        '<div class="vel-xp-stat"><span>♛ BÔNUS DE CARGOS</span><strong>'+configured.length+'</strong><small>Cargos configurados</small></div>'+
+      '</section>'+
+      '<div class="vel-xp-layout">'+
+        card('Sistema de experiência','XP base e bônus por cargo deste servidor.',form,'✦')+
+        '<aside class="vel-xp-info">'+
+          '<h2>Como funciona?</h2><p>Cada mensagem válida rende <strong>1 XP base</strong>, sem cooldown. Bônus de cargos são somados quando o membro possui mais de um cargo configurado.</p>'+
+          '<div class="vel-xp-example" aria-label="Exemplo de bônus acumulado">'+
+            '<span>EXEMPLO DE GANHO</span><div class="vel-xp-example-level"><strong>1 XP base</strong><small>+ 5 VIP + 3 Booster</small></div>'+
+            '<div class="vel-xp-track"><span></span></div><small>9 XP em uma mensagem · bônus acumulados</small></div>'+
+          '</div>'+
+          '<p class="vel-xp-note">💜 O XP e os bônus são independentes por servidor. A curva de níveis atual e os XP já acumulados são preservados.</p>'+
+        '</aside></div>';
   }
   const x=sections[section]||sections.aparencia;
   const common=`<form method="POST" action="/dashboard/${guild.id}/save/${section}" class="config-form"><input type="hidden" name="csrf" value="${esc(csrf)}"/>${x.fields.join('')}<div class="form-actions"><button class="btn" type="submit">✦ Salvar alterações</button><small>As alterações serão aplicadas na próxima sincronização com o bot.</small></div></form>`;
@@ -171,33 +179,51 @@ function sectionHtml(guild,s,section,csrf,store){
 }
 
 function validSettings(section,body,guild){
-  const keys={aparencia:['prefix','embedColor'],boasvindas:['welcomeEnabled','welcomeChannelId','welcomeMessage'],logs:['logEnabled','logChannelId'],tickets:['ticketsEnabled','ticketsCategoryId','ticketsLogChannelId','ticketsPanelChannelId','ticketsStaffRoleId'],niveis:['xpEnabled','xpChannelId','xpCooldown'],parcerias:['partnershipEnabled','partnershipReviewId','partnershipAnnounceId','partnershipPanelId']}[section];
-  if(!keys)throw Error('Seção inválida.');
-  const patch={};
-  for(const key of keys){
-    if(typeof DEFAULT_SETTINGS[key]==='boolean'){patch[key]=body[key]==='on';continue;}
-    let value=String(body[key]||'').trim();
-    if(typeof DEFAULT_SETTINGS[key]==='number'){
-      const n=Number(value),min=key==='xpCooldown'?10:3,max=100;
-      if(!Number.isInteger(n)||n<min||n>max)throw Error(`Campo ${key}: valor fora do limite ${min}–${max}.`);
-      patch[key]=n;continue;
-    }
-    if(key==='ticketsStaffRoleId'){if(value && (!guild.roles.cache.has(value)||value===guild.id))throw Error('Cargo de atendimento inválido.');}
-    else if(key.endsWith('ChannelId')||key.endsWith('CategoryId')||['partnershipReviewId','partnershipAnnounceId','partnershipPanelId'].includes(key)){
-      if(value){const channel=guild.channels.cache.get(value);if(!channel||channel.guild?.id!==guild.id||(key==='ticketsCategoryId'?channel.type!==ChannelType.GuildCategory:channel.type!==ChannelType.GuildText))throw Error(`Canal inválido: ${key}.`);}
-    }else if(key==='prefix'){
-      if(value.length!==1||/\s|\//.test(value))throw Error('Prefixo deve ter um caractere, exceto / ou espaço.');
-    }else if(key==='embedColor'){
-      if(!/^#[\da-fA-F]{6}$/.test(value))throw Error('Cor deve ser no formato #aabbcc.');
-    }else if(key==='aiModel'){
-      if(value.length>120||!/^[-\w./:]*$/.test(value))throw Error('Modelo inválido.');
-    }else if(key==='welcomeMessage'){
-      if(value.length>1800)throw Error('Mensagem muito longa.');
-    }else if(value.length>1800)throw Error('Campo muito longo.');
-    patch[key]=value;
-  }
-  return patch;
-}
+   const keys={aparencia:['prefix','embedColor'],boasvindas:['welcomeEnabled','welcomeChannelId','welcomeMessage'],logs:['logEnabled','logChannelId'],tickets:['ticketsEnabled','ticketsCategoryId','ticketsLogChannelId','ticketsPanelChannelId','ticketsStaffRoleId'],niveis:['xpEnabled','xpChannelId','xpRoleBonuses'],parcerias:['partnershipEnabled','partnershipReviewId','partnershipAnnounceId','partnershipPanelId']}[section];
+   if(!keys)throw Error('Seção inválida.');
+   const patch={};
+   for(const key of keys){
+     if(key==='xpRoleBonuses'){
+       const roleIds=body.xpBonusRoleId===undefined?[]:(Array.isArray(body.xpBonusRoleId)?body.xpBonusRoleId:[body.xpBonusRoleId]);
+       const amounts=body.xpBonusAmount===undefined?[]:(Array.isArray(body.xpBonusAmount)?body.xpBonusAmount:[body.xpBonusAmount]);
+       if(Math.max(roleIds.length,amounts.length)>20)throw Error('Configure no máximo 20 cargos com bônus.');
+       const bonuses=[],seen=new Set();
+       for(let i=0;i<Math.max(roleIds.length,amounts.length);i++){
+         const roleId=String(roleIds[i]||'').trim(),amountText=String(amounts[i]||'').trim();
+         if(!roleId&&!amountText)continue;
+         if(!roleId||!amountText)throw Error('Escolha um cargo e informe o XP extra.');
+         if(!/^\d{17,20}$/.test(roleId)||roleId===guild.id||!guild.roles.cache.has(roleId))throw Error('Cargo de bônus inválido ou inexistente neste servidor.');
+         if(seen.has(roleId))throw Error('Não repita o mesmo cargo na lista de bônus.');
+         const amount=Number(amountText);
+         if(!Number.isInteger(amount)||amount<1||amount>1000)throw Error('XP extra deve ficar entre 1 e 1.000 por cargo.');
+         seen.add(roleId);bonuses.push({roleId,amount});
+       }
+       patch[key]=bonuses;continue;
+     }
+     if(typeof DEFAULT_SETTINGS[key]==='boolean'){patch[key]=body[key]==='on';continue;}
+     let value=String(body[key]||'').trim();
+     if(typeof DEFAULT_SETTINGS[key]==='number'){
+       const n=Number(value),min=key==='xpCooldown'?10:3,max=100;
+       if(!Number.isInteger(n)||n<min||n>max)throw Error('Campo '+key+': valor fora do limite '+min+'–'+max+'.');
+       patch[key]=n;continue;
+     }
+     if(key==='ticketsStaffRoleId'){if(value && (!guild.roles.cache.has(value)||value===guild.id))throw Error('Cargo de atendimento inválido.');}
+     else if(key.endsWith('ChannelId')||key.endsWith('CategoryId')||['partnershipReviewId','partnershipAnnounceId','partnershipPanelId'].includes(key)){
+       if(value){const channel=guild.channels.cache.get(value);if(!channel||channel.guild?.id!==guild.id||(key==='ticketsCategoryId'?channel.type!==ChannelType.GuildCategory:channel.type!==ChannelType.GuildText))throw Error('Canal inválido: '+key+'.');}
+     }else if(key==='prefix'){
+       if(value.length!==1||/\s|\//.test(value))throw Error('Prefixo deve ter um caractere, exceto / ou espaço.');
+     }else if(key==='embedColor'){
+       if(!/^#[\da-fA-F]{6}$/.test(value))throw Error('Cor deve ser no formato #aabbcc.');
+     }else if(key==='aiModel'){
+       if(value.length>120||!/^[-\w./:]*$/.test(value))throw Error('Modelo inválido.');
+     }else if(key==='welcomeMessage'){
+       if(value.length>1800)throw Error('Mensagem muito longa.');
+     }else if(value.length>1800)throw Error('Campo muito longo.');
+     patch[key]=value;
+   }
+   return patch;
+ }
+
 function errorRedirect(res,id,section,msg){return res.redirect(`/dashboard/${id}/${section}?error=${encodeURIComponent(msg)}`);}
 function requestPath(req){return req.originalUrl||'/';}
 
