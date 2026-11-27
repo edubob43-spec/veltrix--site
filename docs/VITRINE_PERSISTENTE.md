@@ -1,40 +1,42 @@
-# Vitrine da comunidade Veltrix — persistência real
+# Vitrine da comunidade Veltrix — V3.2
 
-## O que muda
+## Funcionamento
 
-- A página inicial usa a largura inteira da tela (sem a moldura retangular).
-- A faixa horizontal é animada e **só aparece para quem fez login com Discord quando já há participantes**.
-- Sem nenhuma foto autorizada, **não aparece seção, símbolos fictícios ou texto de vitrine**.
-- Clicar em Login **não** publica automaticamente a foto. Cada pessoa pode decidir em **Minha conta → Minha vitrine**.
-- A pessoa autoriza publicar nome e foto do Discord, e pode retirar a autorização a qualquer momento. O usuário é identificado exclusivamente pela sessão OAuth2 do site.
-- Os dados são gravados no PostgreSQL, não em arquivos temporários do Render e **não no GitHub**. O histórico Git manteria dados pessoais mesmo após a exclusão e por isso não deve ser usado como banco de usuários.
+- A galeria aparece na home para **qualquer visitante**, mesmo sem login, desde que existam pessoas cadastradas.
+- Cada pessoa aparece **uma vez** por rodada. Se houver só uma pessoa, a foto fica centralizada e parada. Com duas ou mais pessoas, o carrossel mostra **uma por vez**, deslizando horizontalmente.
+- Se ninguém estiver cadastrado, a seção toda desaparece.
+- **Novos logins** do Discord após esta versão podem adicionar automaticamente nome e avatar à galeria. O aviso desse comportamento está visível na home antes de entrar.
+- O usuário pode escolher **Minha conta → Minha vitrine → Ocultar minha foto**. Isso remove seu nome e avatar da galeria e impede que os próximos logins recadastrem a foto.
+- Quem ocultou pode voltar a aparecer quando quiser, pelo botão **Voltar a mostrar minha foto**.
+- Contas previamente cadastradas sob a regra de galeria privada **não se tornam públicas retroativamente**; para entrar na galeria pública, precisam entrar de novo no Discord depois da atualização ou habilitar a exibição na própria página.
+- Quem usa a Veltrix somente pelo bot do Discord não é adicionado automaticamente. O cadastro é feito no fluxo de login do **site**.
 
-## Conectar o banco (necessário uma vez)
+## Persistência
 
-1. Crie ou utilize um banco PostgreSQL persistente, por exemplo no [Neon](https://console.neon.tech/) ou em outra instância PostgreSQL.
-2. Copie a **connection string** PostgreSQL, que normalmente começa com `postgresql://` e termina com parâmetros TLS como `?sslmode=require`.
-3. No **Render → veltrix-painel → Environment**, cadastre **somente lá**:
+O armazenamento da galeria é um banco PostgreSQL, como o Neon. Não salvar nomes, fotos nem IDs no GitHub: os commits guardariam histórico dos dados mesmo após a pessoa removê-los da galeria.
 
-   `VELTRIX_SHOWCASE_DATABASE_URL` = `postgresql://usuario:senha@servidor/banco?sslmode=require`
+1. No Neon, abra o projeto Veltrix e copie a conexão PostgreSQL com SSL (somente em local seguro).
+2. Em **Render → veltrix-painel → Environment**, defina:
 
-   O exemplo acima é ilustrativo. Use sua connection string real. **Nunca cole essa senha em um chat, print ou arquivo do repositório.**
-4. Salve e aguarde o deploy no Render. O site cria automaticamente a tabela `veltrix_showcase_members` dentro do banco, desde que o usuário tenha permissão `CREATE TABLE`.
-5. Faça login com Discord no site; abra **Minha conta → Minha vitrine**.
-6. Marque a autorização e clique **Participar da vitrine**. Recarregue a home: a galeria deverá aparecer e deslizar para o lado.
-7. Teste **Remover minha foto** e confirme que ela desapareceu. O registro correspondente é excluído do PostgreSQL.
+   `VELTRIX_SHOWCASE_DATABASE_URL` = a URL PostgreSQL do Neon.
 
-## Se o banco ainda não estiver configurado
+3. Não divulgue essa URL ou senha no GitHub, chat, screenshots ou logs.
+4. O site prepara automaticamente as tabelas:
 
-A home **não** mostra fotos inventadas nem dados de um arquivo temporário. Em **Minha vitrine**, a tela explica que falta conectar o banco. A economia, o Daily, a KataBump e o painel de servidores continuam independentes.
+   - `veltrix_showcase_members` (nome/avatar de participantes visíveis).
+   - `veltrix_showcase_hidden` (apenas chave HMAC de contas que pediram para ocultar; não contém avatar nem ID em texto puro).
 
-## Segurança
+5. O HMAC usa o `SESSION_SECRET` já configurado no Render. **Não troque o segredo sem plano de migração**, pois mudar o segredo invalidaria os registros de exclusão automática.
+6. O site também adiciona a coluna `public_visible`. Contas antigas recebem `FALSE` por padrão para não publicar fotos compartilhadas apenas com usuários logados.
 
-- Cadastro exige sessão Discord + CSRF + checkbox explícito.
-- Nome e avatar são sanitizados antes da inserção/exibição.
-- Ações do banco usam parâmetros SQL (`$1`, `$2`, ...).
-- A remoção exclui o registro da tabela (e não cria commits Git).
-- O banco não deve ficar com as credenciais públicas nem na URL do navegador.
+## Cuidados
 
-## Render
+- Login OAuth2 é necessário para entrar na galeria, e não apenas ser membro do bot.
+- Postagens de gerenciamento da foto exigem a sessão Discord e token CSRF.
+- Nome e avatar são sanitizados; SQL usa parâmetros.
+- O usuário pode se remover a qualquer momento. O registro da galeria é apagado no banco; mantém-se somente uma chave HMAC para não cadastrar novamente sem pedido.
+- A faixa não cria imagens, pessoas nem estatísticas fictícias.
 
-Serviços web gratuitos do Render usam sistema de arquivos efêmero: dados de arquivos locais podem ser perdidos em novas publicações e reinicializações. PostgreSQL externo resolve esse problema. A variável `VELTRIX_SHOWCASE_DATABASE_URL` é privada e **opcional**, mas obrigatória para ativar a vitrine.
+## Verificação
+
+Depois do deploy, teste com uma conta que entra no site pela primeira vez. Confira a galeria em uma aba anônima, depois esconda a foto e entre novamente: ela deve permanecer oculta. Com uma única conta, só deve existir **um** avatar visível; com duas ou mais, cada avatar deve aparecer separadamente.
