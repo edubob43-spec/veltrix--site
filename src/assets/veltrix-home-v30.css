@@ -151,3 +151,37 @@
  .vel-home-mascot,.vel-home-star.one,.vel-home-star.two,.vel-community-track.is-moving{animation:none!important}
  .vel-home-primary,.vel-home-secondary,.vel-home-daily,.vel-community-photo{transition:none}
 }
+
+
+/* V3.1: remover o retângulo central; a home ocupa toda a largura da tela. */
+body.landing-page .shell{width:100%;max-width:none;margin:0;overflow:visible}
+body.landing-page .layout{width:100%;max-width:none;margin:0}
+body.landing-page .main{width:100%;max-width:none;min-width:0;padding:0;overflow:hidden}
+body.landing-page .top{width:100%;padding-inline:clamp(18px,3vw,56px)}
+body.landing-page .landing-v30{width:100%;max-width:none;margin:0}
+body.landing-page .vel-home-hero{
+  width:100%;
+  border:0;
+  background:
+    radial-gradient(ellipse at 22% 45%,rgba(114,65,191,.44),transparent 54%),
+    radial-gradient(ellipse at 83% 32%,rgba(47,169,204,.22),transparent 60%),
+    linear-gradient(180deg,#100d21 2%,#181433 58%,#171824 100%);
+  box-shadow:inset 0 -36px 48px rgba(23,24,36,.85);
+}
+/* A faixa move continuamente com usuários reais; não há símbolos ou avatares falsos. */
+body.landing-page .vel-community-track.is-moving{
+  animation:vel-community-slide 28s linear infinite;
+  will-change:transform;
+}
+body.landing-page .vel-community-window:hover .vel-community-track.is-moving{
+  animation-play-state:running;
+}
+@media(prefers-reduced-motion:reduce){
+  body.landing-page .vel-community-track.is-moving{animation:none;transform:none}
+}
+body:not(.landing-page) .vel-showcase-action{align-items:flex-start;text-align:left}
+body:not(.landing-page) .vel-showcase-consent{line-height:1.55;max-width:640px}
+body:not(.landing-page) .vel-showcase-notice{margin:12px 0}
+
+.vel-showcase-settings{max-width:720px;padding:26px}
+.vel-showcase-back{margin-top:20px}
