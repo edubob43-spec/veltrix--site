@@ -164,7 +164,6 @@ function sectionHtml(guild,s,section,csrf,store){
           '<div class="vel-xp-example" aria-label="Exemplo de bônus acumulado">'+
             '<span>EXEMPLO DE GANHO</span><div class="vel-xp-example-level"><strong>1 XP base</strong><small>+ 5 VIP + 3 Booster</small></div>'+
             '<div class="vel-xp-track"><span></span></div><small>9 XP em uma mensagem · bônus acumulados</small></div>'+
-          '</div>'+
           '<p class="vel-xp-note">💜 O XP e os bônus são independentes por servidor. A curva de níveis atual e os XP já acumulados são preservados.</p>'+
         '</aside></div>';
   }
