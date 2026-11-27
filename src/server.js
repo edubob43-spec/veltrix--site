@@ -523,7 +523,7 @@ app.get('/dashboard/:id/:section',logged,guard,(req,res)=>{
   const last=bridge.results.get(req.guild.id);
   const message=req.query.queued?'Solicitação enviada à Veltrix. As alterações aparecem após a próxima sincronização.':req.query.error?String(req.query.error).slice(0,160):last?`${last.ok?'Última ação concluída':'Última ação falhou'}: ${last.action}${last.error?` — ${last.error}`:''}`:'';
   const html=(req.discordGuildsStale?'<div class="alert">O Discord está instável. Exibindo dados verificados recentemente; alterações exigem nova validação.</div>':'')+sectionHtml(req.guild,req.guildData.settings,sec,req.session.csrf,{});
-  res.set('Cache-Control','no-store').send(page(sec,html,{user:req.session.user,side:sidebar(req.guild,sec),flash:message}));
+  res.set('Cache-Control','no-store').send(page(sec,html,{user:req.session.user,side:sidebar({...req.guild,icon:req.oauthGuild?.icon},sec),flash:message}));
 });
 app.get('/dashboard/:id',logged,guard,(req,res)=>res.redirect(`/dashboard/${req.guild.id}/geral`));
 app.post('/dashboard/:id/save/:section',logged,guard,checkCsrf,(req,res)=>{
