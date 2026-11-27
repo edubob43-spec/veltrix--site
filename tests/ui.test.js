@@ -28,7 +28,6 @@ test('Avatar Nitro animado usa GIF no menu da conta; estático usa PNG',()=>{
 });
 
 test('menu lateral mantém todas as rotas e separa por categoria',()=>{
-  const {sidebar}=requireSidebarTestHelpers();
   const html=sidebar(guild,'identidade');
   for (const id of ['geral','tickets','boasvindas','logs','niveis','parcerias','permissoes','aparencia','identidade']){
     assert.match(html,new RegExp('/dashboard/'+gid+'/'+id+'(?:["?])'));
@@ -43,4 +42,14 @@ test('menu lateral mantém todas as rotas e separa por categoria',()=>{
   assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
   assert.equal((html.match(/<nav /g)||[]).length,3);
 });
-function requireSidebarTestHelpers(){ return {sidebar}; }
+test('menu lateral usa ícone real do servidor quando disponível',()=>{
+  const g={...guild,icon:'0123456789abcdef0123456789abcdef'};
+  const html=sidebar(g,'geral');
+  assert.match(html,/vel-sidebar-server-image/);
+  assert.match(html,/cdn\\.discordapp\\.com\\/icons\\/123456789012345678\\/0123456789abcdef0123456789abcdef\\.webp/);
+});
+
+test('menu lateral preserva emoji como fallback do ícone',()=>{
+  const html=sidebar({...guild,name:'🍭 Comunidade',icon:null},'geral');
+  assert.match(html,/<div class="servericon">🍭<\\/div>/);
+});
