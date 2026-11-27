@@ -19,6 +19,7 @@ import { renderGuildAvatar } from './guild-icons.js';
 import { createShowcaseStore, renderCommunityShowcase, renderShowcaseSettings } from './community-showcase.js';
 import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
+import { requestAuthorizedGuilds, canUseReadOnlyGuildCache, isTransientGuildError } from './discord-guild-lookup.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
 // Render = HTTPS + OAuth; KataBump = bot e armazenamento definitivo.
@@ -321,23 +322,30 @@ function logged(req,res,next){
   }).catch(e=>res.status(e.status||503).send(page('Discord indisponível',
     '<div class="alert">Não foi possível renovar o login agora. Tente novamente em alguns instantes.</div>')));
 }
-async function guildsFor(req){
-  // A API pode revogar o token antes do horário informado. Revalida uma vez se retornar 401.
-  for (let attempt=0;attempt<2;attempt++){
-    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);
-    try{
-      const r=await fetch('https://discord.com/api/v10/users/@me/guilds',
-        {headers:{Authorization:`Bearer ${req.session.oauth.accessToken}`},signal:ctl.signal});
-      if(r.status===401 && attempt===0) {
-        if(!await ensureOAuth(req,{force:true}))throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
-        continue;
-      }
-      if(r.status===401)throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
-      if(!r.ok)throw Object.assign(Error(`Discord guilds HTTP ${r.status}`),{status:r.status});
-      return (await r.json()).filter(authorized);
-    }finally{clearTimeout(timer);}
+async function guildsFor(req,{write=false}={}){
+  const uid=String(req.session.user?.id||'');
+  const now=Date.now(),cached=req.session.discordGuildCache;
+  // Ler páginas repetidamente não exige uma chamada à API a cada clique.
+  // Não se usa cache em POST: toda modificação revalida permissões no Discord.
+  if(!write && canUseReadOnlyGuildCache(cached,uid,now,20000))return cached.list;
+  try {
+    const list=await requestAuthorizedGuilds({
+      getAccessToken:()=>req.session.oauth?.accessToken,
+      refreshAccessToken:()=>ensureOAuth(req,{force:true}),
+      authorized
+    });
+    req.session.discordGuildCache={userId:uid,checkedAt:Date.now(),list};
+    return list;
+  }catch(error){
+    // Apenas visualização pode usar permissões verificadas recentemente
+    // quando houver oscilação de rede / 429. Nunca usar em alterações.
+    if(!write && isTransientGuildError(error) && canUseReadOnlyGuildCache(cached,uid,Date.now(),90000)){
+      req.discordGuildsStale=true;
+      console.warn('[Discord guilds] Consulta temporária indisponível; exibindo cache de leitura',error.status||error.code||'rede');
+      return cached.list;
+    }
+    throw error;
   }
-  throw Object.assign(Error('Sessão OAuth vencida'),{status:401});
 }
 // Perfil individual: cada pessoa edita SOMENTE o próprio usuário autenticado.
 // Não exige Gerenciar Servidor e nunca permite trocar userId pelo formulário.
@@ -483,12 +491,26 @@ async function guard(req,res,next){
   const raw=bridge.guilds.get(req.params.id);
   if(!raw)return res.status(404).send('Veltrix não está nesse servidor.');
   try{
-    const g=(await guildsFor(req)).find(g=>g.id===req.params.id);
+    const g=(await guildsFor(req,{write:req.method!=='GET'})).find(g=>g.id===req.params.id);
     if(!g)return res.status(403).send('Sem permissão Gerenciar Servidor.');
     req.guild=makeGuild(raw);req.oauthGuild=g;req.guildData=raw;next();
   }catch(e){
-    if(e.status===401)return res.status(401).send('Sua sessão do Discord expirou. Entre novamente para continuar.');
-    return res.status(503).send('Não foi possível consultar o Discord agora. Tente novamente sem perder suas configurações.');
+    const section=String(req.params.section||'geral');
+    const safeSection=nav.some(([k])=>k===section)?section:'geral';
+    const back=`/dashboard/${req.params.id}/${safeSection}${req.method==='GET' && req.query.queued==='1'?'?queued=1':''}`;
+    console.warn('[Guard Discord]',req.method,'status='+String(e.status||e.code||'NETWORK'));
+    if(e.status===401)return res.status(401).send(page('Sessão expirada',
+      '<div class="heading"><h1>Faça login novamente</h1><p>Seu acesso ao Discord expirou. Nenhuma configuração foi alterada por esta tentativa.</p></div><a class="btn" href="/auth/login">Entrar com Discord</a>',
+      {user:req.session.user}));
+    if(e.status===403)return res.status(403).send(page('Sem permissão',
+      '<div class="heading"><h1>Permissão não confirmada</h1><p>Não foi possível confirmar que sua conta administra este servidor.</p></div><a class="btn" href="/dashboard">Meus servidores</a>',
+      {user:req.session.user}));
+    return res.status(503).set('Retry-After','5').send(page('Discord temporariamente indisponível',
+      `<div class="heading"><div class="eyebrow">VELTRIX • CONEXÃO DISCORD</div><h1>Não conseguimos consultar o Discord agora</h1>
+       <p>A consulta falhou temporariamente. ${req.method==='GET'?(req.query.queued==='1'?'Sua última solicitação pode já estar na fila. Confira o avatar no Discord antes de tentar restaurar novamente.':'Suas configurações continuam salvas.'):'Esta tentativa de restauração ou alteração <strong>não foi enviada</strong>. Seu avatar atual permanece como está.'}</p></div>
+       <div class="alert">Tente novamente em alguns instantes. Se continuar acontecendo, entre novamente com Discord.</div>
+       <div class="vel-actions"><a class="btn" href="${back}">↻ Tentar novamente</a><a class="btn btn-secondary" href="/dashboard">Meus servidores</a></div>`,
+      {user:req.session.user}));
   }
 }
 function checkCsrf(req,res,next){
@@ -500,7 +522,7 @@ app.get('/dashboard/:id/:section',logged,guard,(req,res)=>{
   const sec=nav.some(([k])=>k===req.params.section)?req.params.section:'geral';
   const last=bridge.results.get(req.guild.id);
   const message=req.query.queued?'Solicitação enviada à Veltrix. As alterações aparecem após a próxima sincronização.':req.query.error?String(req.query.error).slice(0,160):last?`${last.ok?'Última ação concluída':'Última ação falhou'}: ${last.action}${last.error?` — ${last.error}`:''}`:'';
-  const html=sectionHtml(req.guild,req.guildData.settings,sec,req.session.csrf,{});
+  const html=(req.discordGuildsStale?'<div class="alert">O Discord está instável. Exibindo dados verificados recentemente; alterações exigem nova validação.</div>':'')+sectionHtml(req.guild,req.guildData.settings,sec,req.session.csrf,{});
   res.set('Cache-Control','no-store').send(page(sec,html,{user:req.session.user,side:sidebar(req.guild,sec),flash:message}));
 });
 app.get('/dashboard/:id',logged,guard,(req,res)=>res.redirect(`/dashboard/${req.guild.id}/geral`));
