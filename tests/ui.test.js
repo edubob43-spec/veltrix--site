@@ -36,8 +36,8 @@ test('painel do servidor mantém as nove rotas existentes divididas em grupos',(
     assert.ok(html.includes(title));
   }
   assert.ok(html.includes('href="/dashboard"'));
-  assert.doesNotMatch(html,/href="\\/me\\/perfil"/);
-  assert.doesNotMatch(html,/href="\\/me\\/daily"/);
+  assert.ok(!html.includes('href="/me/perfil"'));
+  assert.ok(!html.includes('href="/me/daily"'));
   assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
 });
 test('painel pessoal separa servidores, perfil e economia',()=>{
@@ -47,10 +47,10 @@ test('painel pessoal separa servidores, perfil e economia',()=>{
   assert.ok(profile.includes('href="/me/perfil" aria-current="page"'));
   assert.ok(daily.includes('href="/me/daily" aria-current="page"'));
   assert.equal((daily.match(/aria-current="page"/g)||[]).length,1);
-  assert.doesNotMatch(daily,/dashboard\\/123456789012345678\\/tickets/);
+  assert.ok(!daily.includes('/dashboard/123456789012345678/tickets'));
 });
 test('layout da conta e de servidor compartilha CSS atualizado',()=>{
-  assert.match(page('Meus servidores','oi',{side:accountSidebar()}),/veltrix-layout-v29\\.css\\?v=32/);
+  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=32'));
   assert.match(page('Visão geral','oi',{side:sidebar(guild,'geral')}),/vel-server-sidebar-v32/);
 });
 test('menu lateral usa ícone real do servidor quando disponível',()=>{
