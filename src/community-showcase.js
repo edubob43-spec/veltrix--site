@@ -50,9 +50,12 @@ export function createShowcaseStore(connectionString, options = {}) {
             discord_id VARCHAR(20) PRIMARY KEY,
             display_name VARCHAR(40) NOT NULL,
             avatar_hash VARCHAR(34),
+            public_visible BOOLEAN NOT NULL DEFAULT FALSE,
             opted_in_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           )
         `);
+        // Contas cadastradas antes da mudança não ficam públicas retroativamente.
+        await db.query('ALTER TABLE veltrix_showcase_members ADD COLUMN IF NOT EXISTS public_visible BOOLEAN NOT NULL DEFAULT FALSE');
         await db.query(`
           CREATE TABLE IF NOT EXISTS veltrix_showcase_hidden (
             user_key CHAR(64) PRIMARY KEY,
@@ -65,11 +68,12 @@ export function createShowcaseStore(connectionString, options = {}) {
     await initialization;
   }
   const insertQuery = `
-    INSERT INTO veltrix_showcase_members (discord_id, display_name, avatar_hash, opted_in_at)
-    VALUES ($1,$2,$3,NOW())
+    INSERT INTO veltrix_showcase_members (discord_id, display_name, avatar_hash, opted_in_at, public_visible)
+    VALUES ($1,$2,$3,NOW(),TRUE)
     ON CONFLICT (discord_id) DO UPDATE SET
       display_name=EXCLUDED.display_name,
-      avatar_hash=EXCLUDED.avatar_hash
+      avatar_hash=EXCLUDED.avatar_hash,
+      public_visible=TRUE
   `;
   return {
     isConfigured() { return !!db && !!secret; },
@@ -77,7 +81,7 @@ export function createShowcaseStore(connectionString, options = {}) {
       if (!db) return [];
       await ready();
       const result = await db.query(
-        'SELECT discord_id, display_name, avatar_hash FROM veltrix_showcase_members ORDER BY opted_in_at DESC, discord_id ASC LIMIT 48'
+        'SELECT discord_id, display_name, avatar_hash FROM veltrix_showcase_members WHERE public_visible=TRUE ORDER BY opted_in_at DESC, discord_id ASC LIMIT 48'
       );
       const seen = new Set();
       return result.rows.filter(row => {
@@ -90,7 +94,7 @@ export function createShowcaseStore(connectionString, options = {}) {
       if (!db || !validId(userId)) return false;
       await ready();
       const result = await db.query(
-        'SELECT 1 FROM veltrix_showcase_members WHERE discord_id = $1 LIMIT 1',
+        'SELECT 1 FROM veltrix_showcase_members WHERE discord_id = $1 AND public_visible=TRUE LIMIT 1',
         [String(userId)]
       );
       return result.rows.length > 0;
