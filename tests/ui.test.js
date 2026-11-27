@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ChannelType } from 'discord.js';
-import { page, sectionHtml, validSettings, safeId } from '../src/ui.js';
+import { page, sectionHtml, validSettings, safeId, sidebar } from '../src/ui.js';
 import { DEFAULT_SETTINGS } from '../src/defaults.js';
 const gid='123456789012345678';
 const cid='123456789012345679';
@@ -26,3 +26,21 @@ test('Avatar Nitro animado usa GIF no menu da conta; estático usa PNG',()=>{
   assert.match(animated,new RegExp('/avatars/'+id+'/a_'+hash+'\\.gif\\?size=64'));
   assert.match(still,new RegExp('/avatars/'+id+'/'+hash+'\\.png\\?size=64'));
 });
+
+test('menu lateral mantém todas as rotas e separa por categoria',()=>{
+  const {sidebar}=requireSidebarTestHelpers();
+  const html=sidebar(guild,'identidade');
+  for (const id of ['geral','tickets','boasvindas','logs','niveis','parcerias','permissoes','aparencia','identidade']){
+    assert.match(html,new RegExp('/dashboard/'+gid+'/'+id+'(?:["?])'));
+  }
+  assert.match(html,/GERENCIAMENTO/);
+  assert.match(html,/PERSONALIZAÇÃO/);
+  assert.match(html,/ECONOMIA/);
+  assert.match(html,/href="\\/me\\/daily"/);
+  assert.match(html,/href="\\/me\\/perfil"/);
+  assert.match(html,/href="\\/dashboard"/);
+  assert.match(html,/aria-current="page"/);
+  assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
+  assert.equal((html.match(/<nav /g)||[]).length,3);
+});
+function requireSidebarTestHelpers(){ return {sidebar}; }
