@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ChannelType } from 'discord.js';
-import { page, sectionHtml, validSettings, safeId, sidebar } from '../src/ui.js';
+import { page, sectionHtml, validSettings, safeId, sidebar, accountSidebar } from '../src/ui.js';
 import { DEFAULT_SETTINGS } from '../src/defaults.js';
 const gid='123456789012345678';
 const cid='123456789012345679';
@@ -27,20 +27,31 @@ test('Avatar Nitro animado usa GIF no menu da conta; estático usa PNG',()=>{
   assert.match(still,new RegExp('/avatars/'+id+'/'+hash+'\\.png\\?size=64'));
 });
 
-test('menu lateral mantém todas as rotas e separa por categoria',()=>{
+test('painel do servidor mantém as nove rotas existentes divididas em grupos',()=>{
   const html=sidebar(guild,'identidade');
-  for (const id of ['geral','tickets','boasvindas','logs','niveis','parcerias','permissoes','aparencia','identidade']){
-    assert.match(html,new RegExp('/dashboard/'+gid+'/'+id+'(?:["?])'));
+  for(const id of ['geral','aparencia','boasvindas','logs','tickets','niveis','parcerias','permissoes','identidade']){
+    assert.ok(html.includes('/dashboard/'+gid+'/'+id+'"'));
   }
-  assert.match(html,/GERENCIAMENTO/);
-  assert.match(html,/PERSONALIZAÇÃO/);
-  assert.match(html,/ECONOMIA/);
-  assert.ok(html.includes('href="/me/daily"'));
-  assert.ok(html.includes('href="/me/perfil"'));
+  for(const title of ['CONFIGURAÇÕES','COMUNIDADE','MODERAÇÃO','EXPERIÊNCIA']){
+    assert.ok(html.includes(title));
+  }
   assert.ok(html.includes('href="/dashboard"'));
-  assert.match(html,/aria-current="page"/);
+  assert.ok(!html.includes('href="/me/perfil"'));
+  assert.ok(!html.includes('href="/me/daily"'));
   assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
-  assert.equal((html.match(/<nav /g)||[]).length,3);
+});
+test('painel pessoal separa servidores, perfil e economia',()=>{
+  const servers=accountSidebar('servidores'),profile=accountSidebar('perfil'),daily=accountSidebar('daily');
+  for(const path of ['/dashboard','/me/perfil','/me/daily'])assert.ok(servers.includes('href="'+path+'"'));
+  for(const group of ['GERAL','PERSONALIZAÇÃO','ECONOMIA'])assert.ok(servers.includes(group));
+  assert.ok(profile.includes('href="/me/perfil" aria-current="page"'));
+  assert.ok(daily.includes('href="/me/daily" aria-current="page"'));
+  assert.equal((daily.match(/aria-current="page"/g)||[]).length,1);
+  assert.ok(!daily.includes('/dashboard/123456789012345678/tickets'));
+});
+test('layout da conta e de servidor compartilha CSS atualizado',()=>{
+  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=32'));
+  assert.match(page('Visão geral','oi',{side:sidebar(guild,'geral')}),/vel-server-sidebar-v32/);
 });
 test('menu lateral usa ícone real do servidor quando disponível',()=>{
   const g={...guild,icon:'0123456789abcdef0123456789abcdef'};

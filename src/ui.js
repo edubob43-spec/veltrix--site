@@ -40,30 +40,49 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   </details>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
   const isLanding = title === 'Início';
   const particleField = `<div class="sparkfield" aria-hidden="true"><canvas class="vel-star-canvas" aria-hidden="true"></canvas></div>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=32"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
   ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer class="vel-footer-v29" aria-label="Créditos da Veltrix"><span class="vel-footer-name">Veltrix</span><span class="vel-footer-dot" aria-hidden="true"></span><span class="vel-footer-credit">by: thwedu</span>${isLanding?'<span class="vel-footer-dot" aria-hidden="true"></span><a class="vel-footer-privacy" href="/me/vitrine">Privacidade</a>':''}</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
-// Sidebar em grupos, inspirado no formato de navegação por categorias.
- // Só usa páginas já existentes. Não alterar ids/rotas das seções.
-const sidebarGroups = [
-  {id:'gerenciamento',label:'GERENCIAMENTO',sections:['geral','tickets','boasvindas','logs','niveis','parcerias','permissoes']},
-  {id:'personalizacao',label:'PERSONALIZAÇÃO',sections:['aparencia','identidade'],extras:[['/me/perfil','Meu perfil','✦']]},
-  {id:'economia',label:'ECONOMIA',sections:[],extras:[['/me/daily','Meu Daily','🎁']]}
-];
+// A conta possui um painel próprio; as configurações são sempre por servidor.
 const sidebarIcons={geral:'◈',aparencia:'✧',boasvindas:'☼',logs:'▤',tickets:'▣',niveis:'★',parcerias:'♡',permissoes:'♢',identidade:'◉'};
-const sidebarLabels = new Map(nav.map(([id,name])=>[id,name]));
+const sidebarLabels=new Map(nav.map(([id,name])=>[id,name]));
+const serverSidebarGroups=[
+  {id:'configuracoes',label:'CONFIGURAÇÕES',sections:['aparencia','identidade']},
+  {id:'comunidade',label:'COMUNIDADE',sections:['boasvindas','tickets','parcerias']},
+  {id:'moderacao',label:'MODERAÇÃO',sections:['logs','permissoes']},
+  {id:'experiencia',label:'EXPERIÊNCIA',sections:['niveis']}
+];
+function accountSidebar(active='servidores') {
+  const link=(href,label,icon,id)=>`<a class="navlink ${active===id?'active':''}" href="${href}"${active===id?' aria-current="page"':''}><span class="navicon" aria-hidden="true">${icon}</span><span class="vel-side-link-label">${esc(label)}</span></a>`;
+  return `<aside class="sidebar vel-account-sidebar-v32" aria-label="Menu da minha conta">
+    <div class="vel-account-sidebar-head"><div class="vel-account-label">PAINEL VELTRIX</div><strong>Minha conta</strong><small>Seu espaço pessoal</small></div>
+    <div class="vel-sidebar-sections">
+      <section class="vel-side-group" aria-labelledby="vel-account-navigation"><h2 class="vel-side-heading" id="vel-account-navigation">GERAL</h2><nav aria-label="Geral da conta">${link('/dashboard','Meus servidores','▦','servidores')}</nav></section>
+      <section class="vel-side-group" aria-labelledby="vel-account-customization"><h2 class="vel-side-heading" id="vel-account-customization">PERSONALIZAÇÃO</h2><nav aria-label="Personalização da conta">${link('/me/perfil','Meu perfil','✦','perfil')}</nav></section>
+      <section class="vel-side-group" aria-labelledby="vel-account-economy"><h2 class="vel-side-heading" id="vel-account-economy">ECONOMIA</h2><nav aria-label="Economia global">${link('/me/daily','Meu Daily','🎁','daily')}</nav></section>
+    </div>
+    <a class="vel-sidebar-switch" href="/">← Voltar ao site</a>
+  </aside>`;
+}
 function sidebar(guild,active) {
   const base=`/dashboard/${esc(guild.id)}`;
   const serverIconUrl=guildIconUrl(guild);
-  const serverIcon=serverIconUrl?`<img class="vel-sidebar-server-image" src="${esc(serverIconUrl)}" alt="" width="33" height="33" decoding="async"/>`:esc(Array.from(guild.name||'V')[0]||'V');
+  const serverIcon=serverIconUrl?`<img class="vel-sidebar-server-image" src="${esc(serverIconUrl)}" alt="" width="104" height="104" decoding="async"/>`:esc(Array.from(guild.name||'V')[0]||'V');
   const sectionLink=id=>`<a class="navlink ${active===id?'active':''}" href="${base}/${id}"${active===id?' aria-current="page"':''}><span class="navicon" aria-hidden="true">${sidebarIcons[id]}</span><span class="vel-side-link-label">${esc(sidebarLabels.get(id))}</span></a>`;
-  const groups=sidebarGroups.map(group=>`<section class="vel-side-group" aria-labelledby="vel-side-${group.id}">
-    <h2 class="vel-side-heading" id="vel-side-${group.id}">${group.label}</h2>
-    <nav aria-label="${group.label}">${group.sections.map(sectionLink).join('')}${(group.extras||[]).map(([href,label,icon])=>`<a class="navlink" href="${href}"><span class="navicon" aria-hidden="true">${icon}</span><span class="vel-side-link-label">${esc(label)}</span></a>`).join('')}</nav>
+  const groups=serverSidebarGroups.map(group=>`<section class="vel-side-group" aria-labelledby="vel-server-${group.id}">
+    <h2 class="vel-side-heading" id="vel-server-${group.id}">${group.label}</h2>
+    <nav aria-label="${group.label}">${group.sections.map(sectionLink).join('')}</nav>
   </section>`).join('');
-  return `<aside class="sidebar vel-sidebar-v31" aria-label="Menu de gerenciamento">
-    <div class="serverchip"><div class="servericon">${serverIcon}</div><div><small>SERVIDOR ATUAL</small><strong title="${esc(guild.name)}">${esc(guild.name)}</strong></div></div>
-    <div class="vel-sidebar-sections">${groups}<a class="vel-sidebar-switch" href="/dashboard">← Trocar de servidor</a></div>
+  return `<aside class="sidebar vel-server-sidebar-v32" aria-label="Configurações do servidor">
+    <div class="vel-server-sidebar-head">
+      <div class="servericon">${serverIcon}</div>
+      <strong class="vel-server-name" title="${esc(guild.name)}">${esc(guild.name)}</strong>
+      <a class="vel-back-account" href="/dashboard">← Voltar ao meu painel</a>
+    </div>
+    <div class="vel-sidebar-sections">
+      <div class="vel-server-primary"><nav aria-label="Visão geral do servidor">${sectionLink('geral')}</nav></div>
+      ${groups}
+    </div>
   </aside>`;
 }
 function field(id,label,value,type='text',hint='',opts=null){
@@ -142,4 +161,4 @@ function errorRedirect(res,id,section,msg){return res.redirect(`/dashboard/${id}
 function requestPath(req){return req.originalUrl||'/';}
 
 
-export { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS };
+export { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, accountSidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS };
