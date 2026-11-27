@@ -20,7 +20,7 @@ import { createShowcaseStore, renderCommunityShowcase, renderShowcaseSettings } 
 import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { requestAuthorizedGuilds, canUseReadOnlyGuildCache, isTransientGuildError } from './discord-guild-lookup.js';
-import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
+import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, accountSidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
 
 // Render = HTTPS + OAuth; KataBump = bot e armazenamento definitivo.
 // Não coloque DISCORD_TOKEN neste serviço. O bot se comunica com HTTPS de saída.
@@ -389,7 +389,7 @@ app.get('/me/daily',logged,(req,res)=>{
   const stat=dailyState(uid),pending=dailyPending(uid);
   const result=bridge.results.get(`daily:${uid}`);
   const html=renderDailyPage({user:req.session.user,csrf:req.session.csrf,connected:connected(),status:stat,pending,result:result && Date.now()-result.at<180000?result:null});
-  res.set('Cache-Control','no-store').send(page('Meu Daily',html,{user:req.session.user}));
+  res.set('Cache-Control','no-store').send(page('Meu Daily',html,{user:req.session.user,side:accountSidebar('daily')}));
 });
 app.get('/api/me/daily',logged,(req,res)=>{
   const uid=req.session.user.id;watchDaily(uid);
@@ -429,7 +429,7 @@ app.get('/me/vitrine',logged,async(req,res)=>{
     }
   }
   res.set('Cache-Control','no-store').send(page('Vitrine da comunidade',
-    renderShowcaseSettings({configured,optedIn,csrf:req.session.csrf||'',notice}),{user:req.session.user}));
+    renderShowcaseSettings({configured,optedIn,csrf:req.session.csrf||'',notice}),{user:req.session.user,side:accountSidebar()}));
 });
 // O ID da pessoa vem da sessão OAuth, nunca de dados enviados pelo navegador.
 app.post('/me/showcase',logged,checkCsrf,async(req,res)=>{
@@ -457,7 +457,7 @@ app.get('/me/perfil',logged,async(req,res)=>{
     req.query.error?String(req.query.error).slice(0,140):
     last.action==='profile-settings' && Date.now()-last.at<180000 ? (last.ok?'Última personalização aplicada no bot.':'A última personalização falhou: '+last.error):'';
   const content=renderProfileEditor({user:req.session.user,settings:bridge.profiles.get(uid),flags,csrf:req.session.csrf,connected:connected(),message:msg});
-  res.set('Cache-Control','no-store').send(page('Meu perfil',content,{user:req.session.user}));
+  res.set('Cache-Control','no-store').send(page('Meu perfil',content,{user:req.session.user,side:accountSidebar('perfil')}));
 });
 app.post('/me/perfil',logged,checkCsrf,async(req,res)=>{
   if(!connected())return res.status(503).send(page('Sincronização pendente','<div class="alert">Aguarde a reconexão da Veltrix no KataBump antes de salvar.</div><a class="btn" href="/me/perfil">Voltar ao editor</a>',{user:req.session.user}));
@@ -477,13 +477,13 @@ app.post('/me/perfil',logged,checkCsrf,async(req,res)=>{
 app.get('/dashboard',logged,async(req,res)=>{
   try{
     const list=await guildsFor(req);
-    const content=`<div class="heading"><div class="eyebrow">SELECIONE O SERVIDOR</div><h1>Seu espaço de <span class="gradient-text">controle.</span></h1><p>Somente servidores em que você tem permissão Gerenciar Servidor.</p></div>${!connected()?'<div class="alert">Reconectando a Veltrix no KataBump… Este painel atualizará automaticamente quando o bot responder.</div><script defer src="/assets/veltrix-sync-refresh-v26.js"></script>':''}<div class="server-grid">${list.map(g=>{
+    const content=`<div class="heading"><div class="eyebrow">MINHA CONTA • VELTRIX</div><h1>Meus <span class="gradient-text">servidores.</span></h1><p>Escolha um servidor para abrir suas configurações. Seu perfil e sua economia ficam no menu da esquerda.</p></div>${!connected()?'<div class="alert">Reconectando a Veltrix no KataBump… Este painel atualizará automaticamente quando o bot responder.</div><script defer src="/assets/veltrix-sync-refresh-v26.js"></script>':''}<div class="server-grid">${list.map(g=>{
       const inside=bridge.guilds.has(g.id);
       const link=inside?`/dashboard/${g.id}/geral`:`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&permissions=${BOT_PERMISSIONS}&scope=bot%20applications.commands&guild_id=${g.id}`;
       return `<a class="servercard" href="${link}">${renderGuildAvatar(g)}<div><strong>${esc(g.name)}</strong><small>${inside?'● Veltrix conectada':'+ Convidar Veltrix'}</small></div><span>→</span></a>`;
     }).join('')||'<p>Você não administra nenhum servidor disponível.</p>'}</div><script src="/assets/veltrix-guild-icons-v1.js" defer></script>`;
-    res.set('Cache-Control','no-store').send(page('Servidores',content,{user:req.session.user}));
-  }catch(e){res.status(e.status===401?401:503).send(page('Conexão com Discord',`<div class="alert">${e.status===401?'Seu login expirou. Entre novamente.':'Não foi possível consultar o Discord agora. Tente atualizar em alguns instantes.'}</div><a class="btn" href="${e.status===401?'/auth/login':'/dashboard'}">${e.status===401?'Entrar novamente':'Tentar de novo'}</a>`));}
+    res.set('Cache-Control','no-store').send(page('Meus servidores',content,{user:req.session.user,side:accountSidebar('servidores')}));
+  }catch(e){res.status(e.status===401?401:503).send(page('Conexão com Discord',`<div class="alert">${e.status===401?'Seu login expirou. Entre novamente.':'Não foi possível consultar o Discord agora. Tente atualizar em alguns instantes.'}</div><a class="btn" href="${e.status===401?'/auth/login':'/dashboard'}">${e.status===401?'Entrar novamente':'Tentar de novo'}</a>`,{user:req.session.user,side:accountSidebar('servidores')}));}
 });
 async function guard(req,res,next){
   if(!safeId(req.params.id))return res.status(400).send('Servidor inválido.');
