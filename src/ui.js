@@ -1,7 +1,7 @@
 import { v2SectionHtml, V2_CSS } from './v2-ui.js';
 import { PROFILE_EDITOR_CSS } from './profile-editor.js';
 import { DAILY_CSS } from './daily-page.js';
-import { GUILD_ICONS_CSS } from './guild-icons.js';
+import { GUILD_ICONS_CSS, guildIconUrl } from './guild-icons.js';
 import { V2_SECTIONS } from './v2-contract.js';
 import { createHash } from 'node:crypto';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
@@ -54,13 +54,15 @@ const sidebarIcons={geral:'◈',aparencia:'✧',boasvindas:'☼',logs:'▤',tick
 const sidebarLabels = new Map(nav.map(([id,name])=>[id,name]));
 function sidebar(guild,active) {
   const base=`/dashboard/${esc(guild.id)}`;
+  const serverIconUrl=guildIconUrl(guild);
+  const serverIcon=serverIconUrl?`<img class="vel-sidebar-server-image" src="${esc(serverIconUrl)}" alt="" width="33" height="33" decoding="async"/>`:esc(Array.from(guild.name||'V')[0]||'V');
   const sectionLink=id=>`<a class="navlink ${active===id?'active':''}" href="${base}/${id}"${active===id?' aria-current="page"':''}><span class="navicon" aria-hidden="true">${sidebarIcons[id]}</span><span class="vel-side-link-label">${esc(sidebarLabels.get(id))}</span></a>`;
   const groups=sidebarGroups.map(group=>`<section class="vel-side-group" aria-labelledby="vel-side-${group.id}">
     <h2 class="vel-side-heading" id="vel-side-${group.id}">${group.label}</h2>
     <nav aria-label="${group.label}">${group.sections.map(sectionLink).join('')}${(group.extras||[]).map(([href,label,icon])=>`<a class="navlink" href="${href}"><span class="navicon" aria-hidden="true">${icon}</span><span class="vel-side-link-label">${esc(label)}</span></a>`).join('')}</nav>
   </section>`).join('');
   return `<aside class="sidebar vel-sidebar-v31" aria-label="Menu de gerenciamento">
-    <div class="serverchip"><div class="servericon">${esc(guild.name[0]||'V')}</div><div><small>SERVIDOR ATUAL</small><strong title="${esc(guild.name)}">${esc(guild.name)}</strong></div></div>
+    <div class="serverchip"><div class="servericon">${serverIcon}</div><div><small>SERVIDOR ATUAL</small><strong title="${esc(guild.name)}">${esc(guild.name)}</strong></div></div>
     <div class="vel-sidebar-sections">${groups}<a class="vel-sidebar-switch" href="/dashboard">← Trocar de servidor</a></div>
   </aside>`;
 }
