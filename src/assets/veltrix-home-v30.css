@@ -222,5 +222,3 @@ body.landing-page .vel-community-track.is-one-at-a-time.can-rotate:not(.is-pause
   body.landing-page .vel-community-track.is-one-at-a-time{min-height:130px}
   body.landing-page .vel-community-track.is-one-at-a-time .vel-community-person{flex-basis:110px;min-width:110px}
 }
-.vel-home-privacy{max-width:530px;margin-top:12px;color:rgba(226,216,246,.76);font-size:11px;line-height:1.45;text-align:center}
-.vel-home-privacy a{color:#c2fff3;text-decoration:underline;text-underline-offset:2px}
