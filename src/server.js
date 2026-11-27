@@ -64,7 +64,7 @@ const queueJob = (guildId, userId, type, payload, action='') => {
 const makeGuild = (raw) => {
   const channels=(raw.channels||[]).map(c=>({...c,guild:{id:raw.id},isTextBased(){return [0,5,10,11,12].includes(this.type);}}));
   const roles=(raw.roles||[]).map(r=>({...r}));
-  return {id:raw.id,name:raw.name,memberCount:raw.memberCount,stats:raw.stats||{},
+  return {id:raw.id,name:raw.name,memberCount:raw.memberCount,stats:raw.stats||{},supportsXpRoleBonuses:raw.supportsXpRoleBonuses===true,
     channels:{cache:new Map(channels.map(c=>[c.id,c]))}, roles:{cache:new Map(roles.map(r=>[r.id,r]))}};
 };
 
@@ -89,13 +89,14 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     const sanitizedSettings=Object.fromEntries(Object.keys(DEFAULT_SETTINGS).map(k=>[k,raw.settings?.[k]??DEFAULT_SETTINGS[k]]));
     const roleIds=new Set(raw.roles.slice(0,500).filter(r=>safeId(r.id)).map(r=>String(r.id)));
     const xpRoleBonuses=[];
+    const supportsXpRoleBonuses=Array.isArray(raw.settings?.xpRoleBonuses);
     for(const bonus of (Array.isArray(raw.settings?.xpRoleBonuses)?raw.settings.xpRoleBonuses:[]).slice(0,20)){
       const roleId=String(bonus?.roleId||''),amount=bonus?.amount;
       if(!safeId(roleId)||roleId===raw.id||!roleIds.has(roleId)||!Number.isInteger(amount)||amount<1||amount>1000||xpRoleBonuses.some(x=>x.roleId===roleId))continue;
       xpRoleBonuses.push({roleId,amount});
     }
     sanitizedSettings.xpRoleBonuses=xpRoleBonuses;
-    next.set(raw.id,{id:raw.id,name:raw.name.slice(0,100),memberCount:Number(raw.memberCount)||0,
+    next.set(raw.id,{id:raw.id,name:raw.name.slice(0,100),memberCount:Number(raw.memberCount)||0,supportsXpRoleBonuses,
       channels:raw.channels.slice(0,800).filter(c=>safeId(c.id)).map(c=>({id:c.id,name:String(c.name||'').slice(0,100),type:Number(c.type)})),
       roles:raw.roles.slice(0,500).filter(r=>safeId(r.id)).map(r=>({id:r.id,name:String(r.name||'').slice(0,100),managed:!!r.managed})),
       stats:raw.stats||{},settings:sanitizedSettings});
