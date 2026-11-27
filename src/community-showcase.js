@@ -127,7 +127,7 @@ export function createShowcaseStore(connectionString, options = {}) {
 
 // Um card por usuario real. Com 1 participante, um avatar centralizado.
 // Com 2+, o script troca um avatar de cada vez, deslizante, sem fazer clones.
-export function renderCommunityShowcase({ members = [] } = {}) {
+export function renderCommunityShowcase({ members = [], user = null } = {}) {
   if (!Array.isArray(members) || !members.length) return '';
   const seen = new Set();
   const people = members.slice(0,48).filter(member => {
@@ -153,7 +153,7 @@ export function renderCommunityShowcase({ members = [] } = {}) {
       '<div class="vel-community-track is-one-at-a-time' + (rotating ? ' can-rotate' : '') + '">' + cards + '</div>' +
     '</div>' +
     (rotating ? '<script src="/assets/veltrix-community-carousel-v32.js" defer></script>' : '') +
-    '<div class="vel-community-join"><a class="vel-showcase-btn secondary" href="/me/vitrine">Gerenciar minha foto</a></div>' +
+    '<div class="vel-community-join"><a class="vel-showcase-btn secondary" href="' + (user ? '/me/vitrine' : '/auth/login?next=showcase') + '">' + (user ? 'Gerenciar minha foto' : 'Entrar e gerenciar minha foto') + '</a></div>' +
     '</section>';
 }
 
