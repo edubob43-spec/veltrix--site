@@ -226,19 +226,7 @@ app.get('/',async(req,res)=>{
 });
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
-  // Mostra a escolha de privacidade no login, sem ocupar a página principal.
-  // Por padrão, a foto aparece na vitrine; a pessoa pode entrar sem participar.
-  if(req.query.start!=='1'){
-    const next=req.query.next==='showcase'?'&next=showcase':'';
-    const body=`<div class="heading"><div class="eyebrow">✦ CONTA VELTRIX</div>
-      <h1>Entrar com Discord</h1>
-      <p>Se você entrar normalmente, seu nome e avatar poderão aparecer na vitrine pública da Veltrix. Você pode ocultar a foto quando quiser.</p></div>
-      <div class="vel-actions">
-        <a class="btn btn-large" href="/auth/login?start=1${next}">Continuar com Discord ↗</a>
-        <a class="vel-secondary" href="/auth/login?start=1&gallery=off${next}">Entrar sem mostrar minha foto</a>
-      </div>`;
-    return res.set('Cache-Control','no-store').send(page('Entrar com Discord',body,{user:req.session.user||null}));
-  }
+  // Login direto: a rota inicia o OAuth2 do Discord sem tela intermediária.
   req.session.oauthSkipShowcase=req.query.gallery==='off';
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
   req.session.oauthReturnTo=req.query.next==='showcase'?'/me/vitrine':'/dashboard';
