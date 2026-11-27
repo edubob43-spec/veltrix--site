@@ -184,7 +184,7 @@ app.get('/',async(req,res)=>{
     try { members=await showcaseStore.list(); }
     catch(e) { console.warn('[Vitrine Veltrix] Consulta indisponível:',safeError(e.message)); }
   }
-  const community=renderCommunityShowcase({members});
+  const community=renderCommunityShowcase({members,user:currentUser});
   const html=`${loginBanner()}<div class="landing landing-v30">
     <section class="vel-home-hero" aria-labelledby="vel-home-title">
       <div class="vel-home-art">
@@ -228,7 +228,7 @@ app.get('/',async(req,res)=>{
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
-  req.session.oauthReturnTo=req.query.next==='showcase'?'/#comunidade':'/dashboard';
+  req.session.oauthReturnTo=req.query.next==='showcase'?'/me/vitrine':'/dashboard';
   req.session.save(e=>{
     if(e)return res.status(500).send('Falha ao salvar sessão.');
     const p=new URLSearchParams({client_id:clientId,redirect_uri:redirectUri,response_type:'code',scope:'identify guilds',state});
@@ -241,7 +241,7 @@ app.get('/auth/callback',async(req,res)=>{
   if(!expected||state.length!==expected.length||!timingSafeEqual(Buffer.from(state),Buffer.from(expected)))return res.status(403).send('Estado OAuth inválido. Faça login de novo.');
   if(req.query.iss && req.query.iss!=='https://discord.com')return res.status(403).send('Emissor OAuth inválido.');
   const code=String(req.query.code||'');if(!code)return res.status(400).send('Código OAuth ausente.');
-  const oauthReturnTo=req.session.oauthReturnTo==='/#comunidade'?'/#comunidade':'/dashboard';
+  const oauthReturnTo=req.session.oauthReturnTo==='/me/vitrine'?'/me/vitrine':'/dashboard';
   delete req.session.oauthState;
   try {
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
