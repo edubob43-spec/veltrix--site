@@ -40,7 +40,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   </details>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
   const isLanding = title === 'Início';
   const particleField = `<div class="sparkfield" aria-hidden="true"><canvas class="vel-star-canvas" aria-hidden="true"></canvas></div>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=32"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=33"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
   ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer class="vel-footer-v29" aria-label="Créditos da Veltrix"><span class="vel-footer-name">Veltrix</span><span class="vel-footer-dot" aria-hidden="true"></span><span class="vel-footer-credit">by: thwedu</span>${isLanding?'<span class="vel-footer-dot" aria-hidden="true"></span><a class="vel-footer-privacy" href="/me/vitrine">Privacidade</a>':''}</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
 // A conta possui um painel próprio; as configurações são sempre por servidor.
@@ -154,7 +154,7 @@ function sectionHtml(guild,s,section,csrf,store){
           <p>Mensagens elegíveis acumulam XP, respeitando o cooldown individual. Cada <strong>1.000 XP</strong> vale um nível.</p>
           <div class="vel-xp-example" aria-label="Exemplo de progresso">
             <span>EXEMPLO DE PROGRESSO</span><div class="vel-xp-example-level"><strong>Nível 2</strong><small>450 / 1.000 XP</small></div>
-            <div class="vel-xp-track"><span style="width:45%"></span></div>
+            <div class="vel-xp-track"><span></span></div>
             <small>2.450 XP acumulados · apenas ilustração</small>
           </div>
           <p class="vel-xp-note">💜 Seu nível no servidor A não altera seu nível no servidor B. Os VelCoins e o Daily continuam globais e separados do XP.</p>
