@@ -35,9 +35,9 @@ test('menu lateral mantém todas as rotas e separa por categoria',()=>{
   assert.match(html,/GERENCIAMENTO/);
   assert.match(html,/PERSONALIZAÇÃO/);
   assert.match(html,/ECONOMIA/);
-  assert.match(html,/href="\\/me\\/daily"/);
-  assert.match(html,/href="\\/me\\/perfil"/);
-  assert.match(html,/href="\\/dashboard"/);
+  assert.ok(html.includes('href="/me/daily"'));
+  assert.ok(html.includes('href="/me/perfil"'));
+  assert.ok(html.includes('href="/dashboard"'));
   assert.match(html,/aria-current="page"/);
   assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
   assert.equal((html.match(/<nav /g)||[]).length,3);
@@ -46,10 +46,10 @@ test('menu lateral usa ícone real do servidor quando disponível',()=>{
   const g={...guild,icon:'0123456789abcdef0123456789abcdef'};
   const html=sidebar(g,'geral');
   assert.match(html,/vel-sidebar-server-image/);
-  assert.match(html,/cdn\\.discordapp\\.com\\/icons\\/123456789012345678\\/0123456789abcdef0123456789abcdef\\.webp/);
+  assert.ok(html.includes('cdn.discordapp.com/icons/123456789012345678/0123456789abcdef0123456789abcdef.webp'));
 });
 
 test('menu lateral preserva emoji como fallback do ícone',()=>{
   const html=sidebar({...guild,name:'🍭 Comunidade',icon:null},'geral');
-  assert.match(html,/<div class="servericon">🍭<\\/div>/);
+  assert.ok(html.includes('<div class="servericon">🍭</div>'));
 });
