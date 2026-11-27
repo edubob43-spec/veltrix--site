@@ -13,6 +13,7 @@ import multer from 'multer';
 import { V2_ACTION_SECTION, V2_PERMISSIONS, validateV2Action } from './v2-contract.js';
 import { DEFAULT_SETTINGS } from './defaults.js';
 import { cleanProfile, ownedBadges } from './profile-contract.js';
+import { profileSyncStatus } from './profile-status.js';
 import { renderProfileEditor } from './profile-editor.js';
 import { renderDailyPage } from './daily-page.js';
 import { renderGuildAvatar } from './guild-icons.js';
@@ -138,7 +139,14 @@ app.post('/bridge/sync', express.json({limit:'4mb'}), (req,res)=>{
     }
   }
   expireDailyJobs();
-  for(const job of bridge.jobs.values())if(Date.now()-job.createdAt>30*60*1000)bridge.jobs.delete(job.id);
+  const now=Date.now();
+  for(const job of bridge.jobs.values())if(now-job.createdAt>30*60*1000){
+    if(job.type==='profile-settings'){
+      bridge.profilePending.delete(job.userId);
+      bridge.results.set(`profile:${job.userId}`,{ok:false,error:'A Veltrix não confirmou em 30 minutos. Verifique se o bot está online e atualizado no KataBump.',at:now,action:'profile-settings'});
+    }
+    bridge.jobs.delete(job.id);
+  }
   for(const [uid,created] of bridge.profilePending)if(Date.now()-created>35*60*1000)bridge.profilePending.delete(uid);
   for(const [key,info] of bridge.results)if(Date.now()-info.at>60*60*1000)bridge.results.delete(key);
   for(const [uid,last] of bridge.dailyWatch)if(Date.now()-last>15*60*1000){bridge.dailyWatch.delete(uid);bridge.dailyStatuses.delete(uid);}
@@ -458,14 +466,22 @@ app.post('/me/showcase',logged,checkCsrf,async(req,res)=>{
     return res.redirect('/me/vitrine?status=error');
   }
 });
+app.get('/api/me/perfil/status',logged,(req,res)=>{
+  const uid=req.session.user.id;
+  const status=profileSyncStatus(uid,bridge);
+  res.set('Cache-Control','no-store').json({...status,connected:connected()});
+});
 app.get('/me/perfil',logged,async(req,res)=>{
   const uid=req.session.user.id;
   const flags=await personalFlags(req);
-  const last=bridge.results.get(`profile:${uid}`)||{};
-  const msg=req.query.queued?'Sua escolha foi enviada à Veltrix. Aguarde a confirmação do bot.':
-    req.query.error?String(req.query.error).slice(0,140):
-    last.action==='profile-settings' && Date.now()-last.at<180000 ? (last.ok?'Última personalização aplicada no bot.':'A última personalização falhou: '+last.error):'';
-  const content=renderProfileEditor({user:req.session.user,settings:bridge.profiles.get(uid),flags,csrf:req.session.csrf,connected:connected(),message:msg});
+  const status=profileSyncStatus(uid,bridge);
+  const msg=req.query.error?String(req.query.error).slice(0,140):
+    status.status==='pending'?'Sua escolha foi enviada à Veltrix. Aguarde a confirmação do bot.':
+    status.status==='success'?'Personalização aplicada e confirmada pelo bot!':
+    status.status==='failure'||status.status==='expired'?status.error||'O bot não confirmou a personalização. Confira se a Veltrix está online e tente novamente.':
+    req.query.queued?'A confirmação não foi registrada. Atualize a página para conferir seu perfil.':'';
+  const pending=status.status==='pending';
+  const content=renderProfileEditor({user:req.session.user,settings:bridge.profiles.get(uid),flags,csrf:req.session.csrf,connected:connected(),message:msg,pending});
   res.set('Cache-Control','no-store').send(page('Meu perfil',content,{user:req.session.user,side:accountSidebar('perfil')}));
 });
 app.post('/me/perfil',logged,checkCsrf,async(req,res)=>{
