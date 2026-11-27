@@ -208,7 +208,6 @@ app.get('/',async(req,res)=>{
           <a class="vel-home-daily" href="/me/daily">🎁 Meu Daily</a>
         </div>
         <div class="vel-home-status"><span class="vel-home-status-dot" aria-hidden="true"></span>${esc(status)}</div>
-        <p class="vel-home-privacy">Ao entrar com Discord, seu nome e avatar podem aparecer publicamente na vitrine. Você pode <a href="/me/vitrine">ocultar sua foto quando quiser</a>.</p>
       </div>
       <a class="vel-home-down" href="${community?'#comunidade':'#recursos'}" aria-label="Explorar o site Veltrix">⌄</a>
     </section>
@@ -227,6 +226,20 @@ app.get('/',async(req,res)=>{
 });
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
+  // Mostra a escolha de privacidade no login, sem ocupar a página principal.
+  // Por padrão, a foto aparece na vitrine; a pessoa pode entrar sem participar.
+  if(req.query.start!=='1'){
+    const next=req.query.next==='showcase'?'&next=showcase':'';
+    const body=`<div class="heading"><div class="eyebrow">✦ CONTA VELTRIX</div>
+      <h1>Entrar com Discord</h1>
+      <p>Se você entrar normalmente, seu nome e avatar poderão aparecer na vitrine pública da Veltrix. Você pode ocultar a foto quando quiser.</p></div>
+      <div class="vel-actions">
+        <a class="btn btn-large" href="/auth/login?start=1${next}">Continuar com Discord ↗</a>
+        <a class="vel-secondary" href="/auth/login?start=1&gallery=off${next}">Entrar sem mostrar minha foto</a>
+      </div>`;
+    return res.set('Cache-Control','no-store').send(page('Entrar com Discord',body,{user:req.session.user||null}));
+  }
+  req.session.oauthSkipShowcase=req.query.gallery==='off';
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
   req.session.oauthReturnTo=req.query.next==='showcase'?'/me/vitrine':'/dashboard';
   req.session.save(e=>{
@@ -242,7 +255,9 @@ app.get('/auth/callback',async(req,res)=>{
   if(req.query.iss && req.query.iss!=='https://discord.com')return res.status(403).send('Emissor OAuth inválido.');
   const code=String(req.query.code||'');if(!code)return res.status(400).send('Código OAuth ausente.');
   const oauthReturnTo=req.session.oauthReturnTo==='/me/vitrine'?'/me/vitrine':'/dashboard';
+  const skipPublicShowcase=req.session.oauthSkipShowcase===true;
   delete req.session.oauthState;
+  delete req.session.oauthSkipShowcase;
   try {
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
     let token,user;
@@ -252,11 +267,12 @@ app.get('/auth/callback',async(req,res)=>{
       token=await r.json();
       const u=await fetch('https://discord.com/api/v10/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`},signal:ctl.signal});
       if(!u.ok)throw Error(`Discord user HTTP ${u.status}`);user=await u.json();
-      // Cadastro automatico somente em novos logins, com aviso na home.
-      // Quem ocultou a foto nao e recadastrado.
+      // Cadastro só para quem escolheu entrar com vitrine; opt-out sempre respeitado.
       if(showcaseStore.isConfigured()){
-        try{await showcaseStore.autoJoin(user);}
-        catch(error){console.warn('[Vitrine Veltrix] Registro no login indisponivel:',safeError(error.message));}
+        try{
+          if(skipPublicShowcase) await showcaseStore.leave(user.id);
+          else await showcaseStore.autoJoin(user);
+        }catch(error){console.warn('[Vitrine Veltrix] Registro no login indisponivel:',safeError(error.message));}
       }
     }finally{clearTimeout(timer);}
     req.session.regenerate(e=>{
