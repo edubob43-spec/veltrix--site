@@ -50,7 +50,7 @@ test('painel pessoal separa servidores, perfil e economia',()=>{
   assert.ok(!daily.includes('/dashboard/123456789012345678/tickets'));
 });
 test('layout da conta e de servidor compartilha CSS atualizado',()=>{
-  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=33'));
+  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=34'));
   assert.match(page('Visão geral','oi',{side:sidebar(guild,'geral')}),/vel-server-sidebar-v32/);
 });
 test('menu lateral usa ícone real do servidor quando disponível',()=>{
