@@ -40,7 +40,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   </details>`:`<a class="btn btn-small" href="/auth/login">Entrar com Discord</a>`;
   const isLanding = title === 'Início';
   const particleField = `<div class="sparkfield" aria-hidden="true"><canvas class="vel-star-canvas" aria-hidden="true"></canvas></div>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=32"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css?v=33"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
   ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer class="vel-footer-v29" aria-label="Créditos da Veltrix"><span class="vel-footer-name">Veltrix</span><span class="vel-footer-dot" aria-hidden="true"></span><span class="vel-footer-credit">by: thwedu</span>${isLanding?'<span class="vel-footer-dot" aria-hidden="true"></span><a class="vel-footer-privacy" href="/me/vitrine">Privacidade</a>':''}</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
 // A conta possui um painel próprio; as configurações são sempre por servidor.
@@ -108,7 +108,6 @@ function sectionHtml(guild,s,section,csrf,store){
     boasvindas:{title:'Boas-vindas',desc:'Receba novos membros com uma mensagem personalizada.',fields:[field('welcomeEnabled','Ativar boas-vindas',s.welcomeEnabled,'checkbox'),field('welcomeChannelId','Canal das boas-vindas',s.welcomeChannelId,'text','',textCh),field('welcomeMessage','Mensagem de entrada',s.welcomeMessage,'textarea','Use {user} e {server} para mencionar o membro e o servidor.')]},
     logs:{title:'Logs',desc:'Registre entradas, saídas, edições e exclusões de mensagens.',fields:[field('logEnabled','Ativar logs',s.logEnabled,'checkbox'),field('logChannelId','Canal de logs',s.logChannelId,'text','Recomendado: canal privado para staff.',textCh)]},
     tickets:{title:'Central de Tickets',desc:'Painel persistente, canal privado e transcrições TXT.',fields:[field('ticketsEnabled','Ativar tickets',s.ticketsEnabled,'checkbox'),field('ticketsPanelChannelId','Canal para publicar o painel',s.ticketsPanelChannelId,'text','',textCh),field('ticketsCategoryId','Categoria dos tickets',s.ticketsCategoryId,'text','',cats),field('ticketsStaffRoleId','Cargo da equipe de atendimento',s.ticketsStaffRoleId,'text','',selectRoles(guild)),field('ticketsLogChannelId','Canal de transcrições (privado)',s.ticketsLogChannelId,'text','',textCh)]},
-    niveis:{title:'Níveis & Experiência',desc:'XP e níveis simples, sem ranking nem imagens.',fields:[field('xpEnabled','Ativar XP',s.xpEnabled,'checkbox'),field('xpChannelId','Canal para anunciar níveis',s.xpChannelId,'text','',textCh),field('xpCooldown','Intervalo entre pontos (segundos)',s.xpCooldown,'number','De 10 a 100 segundos.')]},
     parcerias:{title:'Parcerias PRO',desc:'Pedidos via formulário, revisão de staff e anúncios.',fields:[field('partnershipEnabled','Ativar parcerias',s.partnershipEnabled,'checkbox'),field('partnershipPanelId','Canal do painel de parcerias',s.partnershipPanelId,'text','',textCh),field('partnershipReviewId','Canal privado de análise',s.partnershipReviewId,'text','',textCh),field('partnershipAnnounceId','Canal de anúncios',s.partnershipAnnounceId,'text','',textCh)]},
   };
   if(section==='geral') {
@@ -118,6 +117,48 @@ function sectionHtml(guild,s,section,csrf,store){
     return `<div class="heading"><div class="eyebrow">VISÃO GERAL</div><h1>Bem-vindo ao seu servidor <span class="gradient-text">💜</span></h1><p>Configure os sistemas da Veltrix em tempo real, com sincronização segura com o bot no KataBump.</p></div>
       <div class="stats"><div class="stat"><span>Membros</span><strong>${guild.memberCount||'—'}</strong><small>Seu servidor</small></div><div class="stat"><span>Perfis XP</span><strong>${count}</strong><small>Participantes</small></div><div class="stat"><span>Tickets abertos</span><strong>${open}</strong><small>Atendimentos</small></div><div class="stat"><span>Sorteios ativos</span><strong>${draws}</strong><small>Em andamento</small></div></div>
       <div class="feature-grid">${nav.filter(x=>x[0]!=='geral').map(([k,n])=>`<a class="feature" href="/dashboard/${guild.id}/${k}"><span class="feature-emoji">${{aparencia:'🎨',boasvindas:'👋',logs:'📜',tickets:'🎫',niveis:'🏆',parcerias:'🤝',permissoes:'🔐',identidade:'🌟'}[k]}</span><strong>${esc(n)}</strong><small>Configurar módulo →</small></a>`).join('')}</div>`;
+  }
+  if(section==='niveis'){
+    // As configurações de XP já pertencem ao servidor selecionado.
+    // A chave de progresso no bot é guildId:userId; não mostrar dados globais aqui.
+    const participants=Math.max(0,Math.trunc(Number(guild.stats?.xpProfiles)||0));
+    const cooldown=Number.isInteger(s.xpCooldown)&&s.xpCooldown>=10&&s.xpCooldown<=100?s.xpCooldown:60;
+    const status=s.xpEnabled===true;
+    const options=[{id:'',name:'Não enviar avisos'},...textCh.filter(ch=>ch.id)];
+    const channelPicker=field('xpChannelId','Canal dos avisos de nível',s.xpChannelId,'text','Deixe sem canal para não enviar anúncios.',options);
+    const name=String(guild.name||'Servidor').trim();
+    const form=`<form method="POST" action="/dashboard/${esc(guild.id)}/save/niveis" class="config-form vel-xp-config-form">
+      <input type="hidden" name="csrf" value="${esc(csrf)}"/>
+      <label class="switch vel-xp-enabled"><span><strong>Ativar experiência por mensagens</strong><small>O XP deste servidor é independente do XP de outros servidores.</small></span><input type="checkbox" name="xpEnabled" ${status?'checked':''}/><i></i></label>
+      <div class="vel-xp-fields">${channelPicker}
+        <label class="field"><span>Cooldown entre mensagens pontuadas</span>
+          <input name="xpCooldown" type="number" inputmode="numeric" required min="10" max="100" step="1" value="${cooldown}"/>
+          <small>De 10 a 100 segundos, separado para cada membro neste servidor.</small>
+        </label>
+      </div>
+      <div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>As configurações serão enviadas ao bot no KataBump.</small></div>
+    </form>`;
+    return `<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>
+      <h1>Níveis <span class="gradient-text">& XP</span></h1><p>Configure a experiência de <strong>${esc(name)}</strong> sem afetar nenhum outro servidor.</p></div>
+      <section class="vel-xp-stats" aria-label="Resumo de XP neste servidor">
+        <div class="vel-xp-stat"><span>✦ STATUS</span><strong>${status?'Ativado':'Desativado'}</strong><small>Somente neste servidor</small></div>
+        <div class="vel-xp-stat"><span>👥 PARTICIPANTES</span><strong>${participants.toLocaleString('pt-BR')}</strong><small>Perfis XP neste servidor</small></div>
+        <div class="vel-xp-stat"><span>★ PROGRESSÃO</span><strong>1.000 XP</strong><small>Para cada nível</small></div>
+        <div class="vel-xp-stat"><span>◷ COOLDOWN</span><strong>${cooldown}s</strong><small>Por membro, por servidor</small></div>
+      </section>
+      <div class="vel-xp-layout">
+        ${card('Sistema de experiência','Escolha como o XP funciona neste servidor.',form,'✦')}
+        <aside class="vel-xp-info">
+          <h2>Como funciona?</h2>
+          <p>Mensagens elegíveis acumulam XP, respeitando o cooldown individual. Cada <strong>1.000 XP</strong> vale um nível.</p>
+          <div class="vel-xp-example" aria-label="Exemplo de progresso">
+            <span>EXEMPLO DE PROGRESSO</span><div class="vel-xp-example-level"><strong>Nível 2</strong><small>450 / 1.000 XP</small></div>
+            <div class="vel-xp-track"><span></span></div>
+            <small>2.450 XP acumulados · apenas ilustração</small>
+          </div>
+          <p class="vel-xp-note">💜 Seu nível no servidor A não altera seu nível no servidor B. Os VelCoins e o Daily continuam globais e separados do XP.</p>
+        </aside>
+      </div>`;
   }
   const x=sections[section]||sections.aparencia;
   const common=`<form method="POST" action="/dashboard/${guild.id}/save/${section}" class="config-form"><input type="hidden" name="csrf" value="${esc(csrf)}"/>${x.fields.join('')}<div class="form-actions"><button class="btn" type="submit">✦ Salvar alterações</button><small>As alterações serão aplicadas na próxima sincronização com o bot.</small></div></form>`;
