@@ -172,3 +172,160 @@ body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch:focus-visible{
   body.dashboard-page .vel-sidebar-v31 .navlink,
   body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch{transition:none}
 }
+
+/* Veltrix V3.2 — duas navegações distintas: conta e configurações por servidor. */
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32){
+  width:256px;flex:0 0 256px;min-width:0;
+  padding:20px 15px 24px;
+  background:rgba(13,11,24,.93);
+  border-right:1px solid rgba(176,144,221,.17);
+  position:sticky;top:0;align-self:flex-start;
+  max-height:calc(100vh - 84px);overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:#745b9c transparent;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-sidebar-sections{
+  min-width:0;display:block;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-group{
+  display:block;min-width:0;padding:0;margin:0;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-group+.vel-side-group{
+  margin-top:13px;padding-top:13px;border-top:1px solid rgba(178,154,218,.17);
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-heading{
+  font-size:10px;line-height:1.35;font-weight:850;letter-spacing:.09em;
+  color:#87e9da;margin:0 9px 7px;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) nav{
+  display:flex;flex-direction:column;gap:3px;min-width:0;overflow:visible;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink{
+  min-height:35px;padding:8px 10px;gap:10px;font-size:12px;
+  border-radius:9px;display:flex;align-items:center;white-space:nowrap;
+  font-weight:650;color:#bfb8cf;transition:background .15s,color .15s;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink:hover{
+  background:rgba(158,116,212,.13);color:#f8f3ff;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink.active{
+  background:rgba(126,97,162,.20);color:#b8f7ec;box-shadow:inset 3px 0 #85e7d8;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navicon{
+  flex:0 0 19px;width:19px;font-size:15px;text-align:center;line-height:1.15;color:#afa4c9;
+}
+body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-link-label{
+  min-width:0;display:block;overflow:hidden;text-overflow:ellipsis;
+}
+body.dashboard-page .vel-server-sidebar-v32 .vel-server-sidebar-head{
+  display:flex;align-items:center;flex-direction:column;gap:8px;
+  padding:1px 2px 17px;min-width:0;border-bottom:1px solid rgba(178,154,218,.17);
+  margin-bottom:13px;text-align:center;
+}
+body.dashboard-page .vel-server-sidebar-v32 .servericon{
+  flex:0 0 auto;width:104px;height:104px;border-radius:23px;
+  display:grid;place-items:center;background:#3b2855;
+  font-size:38px;font-weight:800;overflow:hidden;
+  box-shadow:0 0 0 1px rgba(185,150,236,.26);
+}
+body.dashboard-page .vel-server-sidebar-v32 .vel-sidebar-server-image{
+  display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;
+}
+body.dashboard-page .vel-server-sidebar-v32 .vel-server-name{
+  display:block;width:100%;max-width:100%;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:14px;line-height:1.45;color:#f2ecff;
+}
+body.dashboard-page .vel-server-sidebar-v32 .vel-back-account{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;max-width:100%;min-height:32px;
+  padding:7px 10px;border:1px solid rgba(177,143,216,.20);
+  background:rgba(154,125,192,.10);border-radius:9px;
+  font-size:11px;font-weight:700;color:#d8cce9;white-space:nowrap;
+}
+body.dashboard-page .vel-server-sidebar-v32 .vel-back-account:hover{color:#b4fff1;border-color:rgba(126,231,211,.40)}
+body.dashboard-page .vel-server-sidebar-v32 .vel-server-primary{
+  margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid rgba(178,154,218,.17);
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-account-sidebar-head{
+  display:flex;flex-direction:column;gap:4px;
+  padding:11px 9px 19px;margin-bottom:14px;
+  border-bottom:1px solid rgba(178,154,218,.18);
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-account-label{
+  color:#87e9da;font-size:9px;font-weight:800;letter-spacing:.16em;
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-account-sidebar-head strong{
+  font-size:21px;font-weight:850;line-height:1.2;letter-spacing:-.025em;color:#f6f1ff;
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-account-sidebar-head small{
+  font-size:11px;color:#b3a9c9;
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-sidebar-switch{
+  display:block;border-top:1px solid rgba(178,154,218,.18);
+  margin-top:17px;padding:17px 10px 5px;
+  color:#ada3bc;font-size:12px;font-weight:700;
+}
+body.dashboard-page .vel-account-sidebar-v32 .vel-sidebar-switch:hover{color:#b4fff1}
+@media(min-width:1060px){
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32){
+    width:256px;flex-basis:256px;padding:20px 15px 24px;
+  }
+}
+@media(max-width:680px){
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32){
+    position:static;max-height:none;width:100%;flex-basis:auto;
+    border-right:0;border-bottom:1px solid rgba(176,144,221,.2);
+    padding:12px 14px 10px;overflow:visible;
+  }
+  body.dashboard-page .vel-server-sidebar-v32 .vel-server-sidebar-head{
+    display:grid;grid-template-columns:48px minmax(0,1fr);
+    grid-template-rows:auto auto;column-gap:10px;row-gap:2px;
+    text-align:left;padding:0 0 10px;margin:0 0 9px;
+  }
+  body.dashboard-page .vel-server-sidebar-v32 .servericon{
+    width:48px;height:48px;border-radius:12px;grid-row:1/3;font-size:21px;
+  }
+  body.dashboard-page .vel-server-sidebar-v32 .vel-server-name{
+    grid-column:2;font-size:13px;align-self:end;
+  }
+  body.dashboard-page .vel-server-sidebar-v32 .vel-back-account{
+    grid-column:2;justify-content:start;min-height:0;
+    border:0;padding:1px 0;font-size:11px;background:transparent;
+  }
+  body.dashboard-page .vel-account-sidebar-v32 .vel-account-sidebar-head{
+    padding:0 2px 10px;margin:0 0 8px;
+  }
+  body.dashboard-page .vel-account-sidebar-v32 .vel-account-sidebar-head strong{font-size:17px}
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-sidebar-sections{
+    display:flex;align-items:center;gap:10px;
+    overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+    padding-bottom:7px;scrollbar-width:thin;
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-group{
+    display:flex;align-items:center;gap:7px;flex:0 0 auto;
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-group+.vel-side-group{
+    margin:0;padding:0 0 0 10px;border:0;border-left:1px solid rgba(178,154,218,.22);
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-heading{
+    margin:0;font-size:9px;
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) nav{
+    display:flex;flex-direction:row;gap:4px;overflow:visible;padding:0;
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink{
+    flex:0 0 auto;padding:7px 9px;min-height:33px;gap:6px;
+  }
+  body.dashboard-page .vel-server-sidebar-v32 .vel-server-primary{
+    flex:0 0 auto;border:0;padding:0;margin:0;
+  }
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .vel-side-link-label{
+    overflow:visible;
+  }
+  body.dashboard-page .vel-account-sidebar-v32 .vel-sidebar-switch{
+    flex:0 0 auto;margin:0;padding:7px 9px;border:0;font-size:11px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink{transition:none}
+}
