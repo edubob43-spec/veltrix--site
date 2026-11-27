@@ -182,3 +182,6 @@ body.landing-page .vel-community-window:hover .vel-community-track.is-moving{
 body:not(.landing-page) .vel-showcase-action{align-items:flex-start;text-align:left}
 body:not(.landing-page) .vel-showcase-consent{line-height:1.55;max-width:640px}
 body:not(.landing-page) .vel-showcase-notice{margin:12px 0}
+
+.vel-showcase-settings{max-width:720px;padding:26px}
+.vel-showcase-back{margin-top:20px}
