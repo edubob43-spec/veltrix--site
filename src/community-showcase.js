@@ -88,7 +88,7 @@ export function createShowcaseStore(connectionString, options = {}) {
         if (!validId(row.discord_id) || seen.has(row.discord_id)) return false;
         seen.add(row.discord_id);
         return true;
-      }).map(row => ({ name: cleanName(row.display_name), avatarUrl: avatarUrl(row) }));
+      }).map(row => ({ id: String(row.discord_id), name: cleanName(row.display_name), avatarUrl: avatarUrl(row) }));
     },
     async contains(userId) {
       if (!db || !validId(userId)) return false;
@@ -129,12 +129,12 @@ export function createShowcaseStore(connectionString, options = {}) {
 // Com 2+, o script troca um avatar de cada vez, deslizante, sem fazer clones.
 export function renderCommunityShowcase({ members = [] } = {}) {
   if (!Array.isArray(members) || !members.length) return '';
-  const uniqueUrls = new Set();
+  const seen = new Set();
   const people = members.slice(0,48).filter(member => {
     if (!member || typeof member.name !== 'string' || typeof member.avatarUrl !== 'string') return false;
-    const key = member.avatarUrl;
-    if (uniqueUrls.has(key)) return false;
-    uniqueUrls.add(key);
+    const key = validId(member.id) ? String(member.id) : member.name + '|' + member.avatarUrl;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
   if (!people.length) return '';
