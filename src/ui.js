@@ -26,7 +26,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   const notices=flash?`<div class="alert">${esc(flash)}</div>`:'';
   const userbar=user?`<details class="vel-user-menu" id="vel-user-menu">
     <summary class="vel-user-trigger" aria-label="Abrir opções da conta Veltrix">
-      <span class="vel-user-avatar-wrap"><img class="vel-user-avatar" src="${esc(user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64` : 'https://cdn.discordapp.com/embed/avatars/0.png')}" alt=""/><span class="vel-user-online" aria-hidden="true"></span></span>
+      <span class="vel-user-avatar-wrap"><img class="vel-user-avatar" src="${esc(user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith('a_')?'gif':'png'}?size=64` : 'https://cdn.discordapp.com/embed/avatars/0.png')}" alt=""/><span class="vel-user-online" aria-hidden="true"></span></span>
       <span class="vel-user-identity"><strong>${esc(user.global_name||user.username)}</strong><small>Minha conta</small></span>
       <svg class="vel-user-caret" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </summary>
