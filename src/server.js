@@ -16,7 +16,7 @@ import { cleanProfile, ownedBadges } from './profile-contract.js';
 import { renderProfileEditor } from './profile-editor.js';
 import { renderDailyPage } from './daily-page.js';
 import { renderGuildAvatar } from './guild-icons.js';
-import { createShowcaseStore, renderCommunityShowcase } from './community-showcase.js';
+import { createShowcaseStore, renderCommunityShowcase, renderShowcaseSettings } from './community-showcase.js';
 import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
@@ -45,7 +45,7 @@ const safeError = msg => String(msg || '').replace(/\s+/g,' ').slice(0,160);
 const userGuildPermission = (g, required) => g.owner || ((BigInt(g.permissions || '0') & (0x8n | required)) !== 0n);
 
 const bridge = { guilds:new Map(), profiles:new Map(), profilePending:new Map(), jobs:new Map(), results:new Map(), dailyWatch:new Map(), dailyStatuses:new Map(),lastSeen:0, botOnline:false };
-const showcaseStore=createShowcaseStore(env.VELTRIX_SHOWCASE_FILE||undefined);
+const showcaseStore=createShowcaseStore(env.VELTRIX_SHOWCASE_DATABASE_URL||env.DATABASE_URL||'');
 // Pedidos de sincronização HTTPS aguardando novos trabalhos.
 // Ao salvar uma configuração, acordamos o bot imediatamente.
 const bridgeWaiters = new Set();
@@ -165,7 +165,7 @@ app.use('/auth',limiter);app.use('/dashboard',limiter);app.use('/me',limiter);
 // A tela consulta o status a cada poucos segundos; rate limit próprio protege sem cortar o polling.
 app.use('/api/me',rateLimit({windowMs:15*60*1000,limit:300,standardHeaders:'draft-7',legacyHeaders:false}));
 const loginBanner=()=>oauthReady()?'':'<div class="alert">Login não configurado. Falta preencher as variáveis de ambiente no Render.</div>';
-app.get('/',(req,res)=>{
+app.get('/',async(req,res)=>{
   const status=connected()?`Veltrix conectada em ${bridge.guilds.size} servidor(es)`:'Painel sincronizando com o bot';
   const dashboard=req.session.user?'/dashboard':'/auth/login';
   const features=[
@@ -178,18 +178,13 @@ app.get('/',(req,res)=>{
   ];
   const cards=features.map(([emoji,title,desc])=>`<a class="vel-feature" href="${dashboard}"><span class="vel-feature-icon">${emoji}</span><strong>${title}</strong><small>${desc}</small></a>`).join('');
   const currentUser=req.session.user;
-  const showcaseNotice={
-    added:'Pronto! Sua foto foi adicionada à vitrine da comunidade.',
-    removed:'Sua foto foi removida da vitrine.',
-    consent:'Marque a autorização antes de entrar na vitrine.',
-    error:'Não foi possível atualizar a vitrine agora. Tente novamente.'
-  }[String(req.query.showcase||'')]||'';
-  const community=renderCommunityShowcase({
-    members:showcaseStore.list(),
-    user:currentUser?{...currentUser,optedIn:showcaseStore.contains(currentUser.id)}:null,
-    csrf:req.session.csrf||'',
-    notice:showcaseNotice
-  });
+  // Vitrine visível somente após login e quando houver participantes com consentimento.
+  let members=[];
+  if(currentUser && showcaseStore.isConfigured()) {
+    try { members=await showcaseStore.list(); }
+    catch(e) { console.warn('[Vitrine Veltrix] Consulta indisponível:',safeError(e.message)); }
+  }
+  const community=renderCommunityShowcase({members,user:currentUser});
   const html=`${loginBanner()}<div class="landing landing-v30">
     <section class="vel-home-hero" aria-labelledby="vel-home-title">
       <div class="vel-home-art">
@@ -214,7 +209,7 @@ app.get('/',(req,res)=>{
         </div>
         <div class="vel-home-status"><span class="vel-home-status-dot" aria-hidden="true"></span>${esc(status)}</div>
       </div>
-      <a class="vel-home-down" href="#comunidade" aria-label="Conhecer a comunidade Veltrix">⌄</a>
+      <a class="vel-home-down" href="${community?'#comunidade':'#recursos'}" aria-label="Explorar o site Veltrix">⌄</a>
     </section>
     ${community}
     <section class="vel-resources-v30" id="recursos" aria-labelledby="recursos-titulo">
@@ -396,24 +391,44 @@ app.post('/me/daily/claim',logged,checkCsrf,(req,res)=>{
     return res.redirect('/me/daily?queued=1');
   }catch(e){return res.status(429).send(page('Resgate já em processamento',`<div class="alert">${esc(safeError(e.message))}</div><a class="btn" href="/me/daily">Voltar</a>`,{user:req.session.user}));}
 });
-// Vitrine pública: somente membros que deram consentimento explícito via OAuth2.
-// O userId nunca vem do formulário, somente da sessão autenticada.
-app.post('/me/showcase',logged,checkCsrf,(req,res)=>{
+// O usuário gerencia a própria foto em uma página privada mesmo quando a galeria está vazia.
+app.get('/me/vitrine',logged,async(req,res)=>{
+  const messages={
+    added:'Sua foto foi salva! Ela aparecerá na galeria para pessoas logadas.',
+    removed:'Sua foto foi removida da galeria.',
+    consent:'Marque a autorização antes de participar.',
+    error:'Não foi possível salvar agora. Confira a conexão com o banco de dados.'
+  };
+  let configured=showcaseStore.isConfigured(),optedIn=false;
+  let notice=messages[String(req.query.status||'')]||'';
+  if(configured){
+    try { optedIn=await showcaseStore.contains(req.session.user.id); }
+    catch(error){
+      console.warn('[Vitrine Veltrix]',safeError(error.message));
+      configured=false;
+      notice='Não foi possível consultar o banco de dados agora.';
+    }
+  }
+  res.set('Cache-Control','no-store').send(page('Vitrine da comunidade',
+    renderShowcaseSettings({configured,optedIn,csrf:req.session.csrf||'',notice}),{user:req.session.user}));
+});
+// O ID da pessoa vem da sessão OAuth, nunca de dados enviados pelo navegador.
+app.post('/me/showcase',logged,checkCsrf,async(req,res)=>{
   try {
     const action=String(req.body.showcaseAction||'');
-    if(action==='join') {
-      if(req.body.consent!=='yes')return res.redirect('/?showcase=consent#comunidade');
-      showcaseStore.join(req.session.user);
-      return res.redirect('/?showcase=added#comunidade');
+    if(action==='join'){
+      if(req.body.consent!=='yes')return res.redirect('/me/vitrine?status=consent');
+      await showcaseStore.join(req.session.user);
+      return res.redirect('/me/vitrine?status=added');
     }
-    if(action==='leave') {
-      showcaseStore.leave(req.session.user.id);
-      return res.redirect('/?showcase=removed#comunidade');
+    if(action==='leave'){
+      await showcaseStore.leave(req.session.user.id);
+      return res.redirect('/me/vitrine?status=removed');
     }
     return res.status(400).send('Ação inválida.');
-  } catch(error) {
-    console.warn('[Vitrine Veltrix]',safeError(error.message));
-    return res.redirect('/?showcase=error#comunidade');
+  }catch(error){
+    console.warn('[Vitrine Veltrix] Falha ao salvar:',safeError(error.message));
+    return res.redirect('/me/vitrine?status=error');
   }
 });
 app.get('/me/perfil',logged,async(req,res)=>{
