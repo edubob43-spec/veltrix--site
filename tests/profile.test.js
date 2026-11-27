@@ -7,7 +7,7 @@ test('editor só trabalha com a própria conta, e 6 banners + 4 layouts',()=>{
   const html=renderProfileEditor({user:{id:'123456789012345678',username:'Exemplo',avatar:null},csrf:'xxxx',flags:0,connected:true});
   assert.match(html,/action="\/me\/perfil"/);assert.match(html,/Escolha seu banner/);
   assert.equal((html.match(/name="banner"/g)||[]).length,6);
-  assert.equal((html.match(/name="theme"/g)||[]).length,4);
+  assert.equal((html.match(/name="theme"/g)||[]).length,5);
   assert.doesNotMatch(html,/name="userId"|name="guildId"|Conquistas/);
 });
 test('status de salvamento pendente expõe o elemento para confirmação automática',()=>{
