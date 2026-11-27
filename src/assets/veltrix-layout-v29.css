@@ -329,3 +329,44 @@ body.dashboard-page .vel-account-sidebar-v32 .vel-sidebar-switch:hover{color:#b4
 @media(prefers-reduced-motion:reduce){
   body.dashboard-page .sidebar:is(.vel-account-sidebar-v32,.vel-server-sidebar-v32) .navlink{transition:none}
 }
+
+
+/* XP V3.3 — painel de experiência por servidor. */
+body.dashboard-page .vel-xp-heading{margin-bottom:23px}
+body.dashboard-page .vel-xp-heading strong{color:#e8d3ff}
+.vel-xp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 24px}
+.vel-xp-stat{min-width:0;display:flex;flex-direction:column;gap:5px;padding:17px 18px;
+  background:linear-gradient(145deg,rgba(41,30,62,.84),rgba(21,18,34,.88));
+  border:1px solid rgba(179,149,232,.18);border-radius:16px}
+.vel-xp-stat>span{font-size:10px;font-weight:850;color:#91efdf;letter-spacing:.075em}
+.vel-xp-stat strong{font-size:clamp(18px,2vw,26px);font-weight:850;line-height:1.3;letter-spacing:-.03em;color:#f6efff}
+.vel-xp-stat small{font-size:11px;color:#bdb1cb;line-height:1.5}
+.vel-xp-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(265px,1fr);gap:17px;align-items:start;max-width:1110px}
+.vel-xp-layout .panel{max-width:none;margin:0}
+.vel-xp-layout .panel-head{padding:23px 26px}
+.vel-xp-layout .panel-body{padding:23px 26px}
+.vel-xp-enabled{align-items:center;padding:17px;background:rgba(116,87,170,.12);border:1px solid rgba(185,151,230,.18);border-radius:13px}
+.vel-xp-enabled strong{font-size:13px}
+.vel-xp-enabled small{max-width:440px}
+.vel-xp-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.vel-xp-fields .field{min-width:0}
+.vel-xp-fields .field select,.vel-xp-fields .field input{min-height:46px}
+.vel-xp-info{padding:24px;background:linear-gradient(165deg,rgba(36,30,56,.82),rgba(20,19,31,.90));
+  border:1px solid rgba(170,146,207,.22);border-radius:19px}
+.vel-xp-info h2{font-size:19px;line-height:1.3;margin:0 0 11px}
+.vel-xp-info p{font-size:12px;color:#c9bfd6;line-height:1.72;margin:0 0 15px}
+.vel-xp-info p strong{color:#ffe4b9}
+.vel-xp-example{display:flex;flex-direction:column;gap:9px;border:1px solid rgba(169,135,216,.18);
+  border-radius:13px;padding:15px;margin:17px 0;background:rgba(12,10,25,.35)}
+.vel-xp-example>span{font-size:9px;letter-spacing:.12em;font-weight:800;color:#9eeadc}
+.vel-xp-example-level{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.vel-xp-example-level strong{font-size:15px}
+.vel-xp-example-level small,.vel-xp-example>small{font-size:10px;color:#bdb2cd}
+.vel-xp-track{height:9px;border-radius:30px;background:rgba(137,111,165,.27);overflow:hidden}
+.vel-xp-track span{display:block;width:45%;height:100%;border-radius:inherit;
+  background:linear-gradient(100deg,#ffba89,#b68dff,#8becde)}
+.vel-xp-info .vel-xp-note{color:#adf1de;border-top:1px solid rgba(177,154,220,.16);margin-top:16px;padding-top:15px}
+@media(max-width:1150px){.vel-xp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.vel-xp-layout{grid-template-columns:1fr;max-width:760px}}
+@media(max-width:680px){.vel-xp-stats{gap:9px}.vel-xp-stat{padding:13px}.vel-xp-stat strong{font-size:19px}
+ .vel-xp-fields{grid-template-columns:1fr}.vel-xp-layout .panel-head,.vel-xp-layout .panel-body{padding:19px}
+ .vel-xp-info{padding:19px}}
