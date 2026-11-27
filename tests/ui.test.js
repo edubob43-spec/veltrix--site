@@ -50,7 +50,7 @@ test('painel pessoal separa servidores, perfil e economia',()=>{
   assert.ok(!daily.includes('/dashboard/123456789012345678/tickets'));
 });
 test('layout da conta e de servidor compartilha CSS atualizado',()=>{
-  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=32'));
+  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=33'));
   assert.match(page('Visão geral','oi',{side:sidebar(guild,'geral')}),/vel-server-sidebar-v32/);
 });
 test('menu lateral usa ícone real do servidor quando disponível',()=>{
@@ -63,4 +63,30 @@ test('menu lateral usa ícone real do servidor quando disponível',()=>{
 test('menu lateral preserva emoji como fallback do ícone',()=>{
   const html=sidebar({...guild,name:'🍭 Comunidade',icon:null},'geral');
   assert.ok(html.includes('<div class="servericon">🍭</div>'));
+});
+
+test('tela de níveis distingue XP por servidor sem alterar a base de dados',()=>{
+  const a={...guild,name:'Servidor Alfa',stats:{xpProfiles:12}};
+  const b={...guild,id:'999999999999999999',name:'Servidor Beta',stats:{xpProfiles:3}};
+  const htmlA=sectionHtml(a,{...DEFAULT_SETTINGS,xpEnabled:true,xpCooldown:45},'niveis','csrfSeguro',{});
+  const htmlB=sectionHtml(b,{...DEFAULT_SETTINGS,xpEnabled:false,xpCooldown:60},'niveis','csrfSeguro',{});
+  assert.ok(htmlA.includes('action="/dashboard/'+a.id+'/save/niveis"'));
+  assert.ok(htmlB.includes('action="/dashboard/'+b.id+'/save/niveis"'));
+  assert.ok(htmlA.includes('Servidor Alfa'));
+  assert.ok(htmlB.includes('Servidor Beta'));
+  assert.ok(htmlA.includes('12</strong>'));
+  assert.ok(htmlB.includes('3</strong>'));
+  assert.ok(htmlA.includes('value="45"'));
+  assert.ok(htmlB.includes('value="60"'));
+  assert.ok(htmlA.includes('name="xpEnabled" checked'));
+  assert.ok(!htmlB.includes('name="xpEnabled" checked'));
+  assert.ok(htmlA.includes('1.000 XP'));
+  assert.ok(htmlA.includes('name="csrf" value="csrfSeguro"'));
+});
+test('XP bloqueia cooldown fora do intervalo e valida canal do servidor',()=>{
+  const valid={xpEnabled:'on',xpCooldown:'60',xpChannelId:cid};
+  assert.deepEqual(validSettings('niveis',valid,guild),{xpEnabled:true,xpChannelId:cid,xpCooldown:60});
+  assert.throws(()=>validSettings('niveis',{...valid,xpCooldown:'9'},guild),/limite/);
+  assert.throws(()=>validSettings('niveis',{...valid,xpCooldown:'101'},guild),/limite/);
+  assert.throws(()=>validSettings('niveis',{...valid,xpChannelId:'987654321098765432'},guild),/Canal inválido/);
 });
