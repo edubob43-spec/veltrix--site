@@ -370,3 +370,18 @@ body.dashboard-page .vel-xp-heading strong{color:#e8d3ff}
 @media(max-width:680px){.vel-xp-stats{gap:9px}.vel-xp-stat{padding:13px}.vel-xp-stat strong{font-size:19px}
  .vel-xp-fields{grid-template-columns:1fr}.vel-xp-layout .panel-head,.vel-xp-layout .panel-body{padding:19px}
  .vel-xp-info{padding:19px}}
+
+/* XP role bonus editor V34 */
+.vel-xp-bonus-section{padding:18px;border:1px solid rgba(174,145,220,.18);border-radius:15px;background:rgba(12,10,25,.28);display:flex;flex-direction:column;gap:14px}
+.vel-xp-bonus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.vel-xp-bonus-head h3{margin:0 0 5px;font-size:15px}
+.vel-xp-bonus-head p{margin:0;color:#bdb2cd;font-size:11px;line-height:1.65;max-width:470px}
+.vel-xp-bonus-limit{flex:none;padding:6px 10px;border-radius:999px;background:rgba(151,120,210,.14);border:1px solid rgba(174,145,220,.19);color:#cdb4f4;font-size:10px;font-weight:800}
+.vel-xp-bonus-list{display:flex;flex-direction:column;gap:10px}
+.vel-xp-bonus-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(130px,.8fr) auto;gap:10px;align-items:end;padding:12px;border:1px solid rgba(174,145,220,.13);border-radius:12px;background:rgba(25,20,40,.45)}
+.vel-xp-bonus-row .field{gap:6px;font-size:11px}
+.vel-xp-bonus-row .field select,.vel-xp-bonus-row .field input{min-height:42px;padding:10px 12px;font-size:12px}
+.vel-xp-bonus-remove{align-self:end;min-height:42px;padding:9px 12px;font-size:11px}
+.vel-xp-bonus-add{align-self:flex-start;padding:10px 14px;font-size:12px}
+.vel-xp-bonus-add:disabled{opacity:.45;cursor:not-allowed;transform:none}
+@media(max-width:680px){.vel-xp-bonus-section{padding:13px}.vel-xp-bonus-row{grid-template-columns:minmax(0,1fr) minmax(105px,.7fr);gap:9px}.vel-xp-bonus-remove{grid-column:1/-1;width:100%}}
