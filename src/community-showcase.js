@@ -78,7 +78,7 @@ export function renderCommunityShowcase({members=[],user=null,csrf='',notice=''}
   const controls=user ? (user.optedIn
     ? `<form class="vel-showcase-action" method="POST" action="/me/showcase"><input type="hidden" name="csrf" value="${escapeHtml(csrf)}"><input type="hidden" name="showcaseAction" value="leave"><button class="vel-showcase-btn secondary" type="submit">Remover minha foto</button></form>`
     : `<form class="vel-showcase-action" method="POST" action="/me/showcase"><input type="hidden" name="csrf" value="${escapeHtml(csrf)}"><input type="hidden" name="showcaseAction" value="join"><label class="vel-showcase-consent"><input type="checkbox" name="consent" value="yes" required> Autorizo mostrar publicamente meu nome e avatar do Discord nesta vitrine até eu remover.</label><button class="vel-showcase-btn" type="submit">✦ Quero aparecer também</button></form>`)
-    : `<a class="vel-showcase-btn" href="/auth/login">✦ Entrar com Discord para participar</a>`;
+    : `<a class="vel-showcase-btn" href="/auth/login?next=showcase">✦ Entrar com Discord para participar</a>`;
   return `<section id="comunidade" class="vel-community" aria-labelledby="vel-community-title">
     <div class="vel-community-heading"><span class="vel-home-eyebrow">✦ COMUNIDADE VELTRIX</span><h2 id="vel-community-title">A nossa galera também <span>brilha!</span></h2>
     <p>${real ? 'Pessoas que escolheram aparecer na vitrine da Veltrix.' : 'Seja um dos primeiros a aparecer nessa vitrine com sua foto do Discord.'}</p></div>
