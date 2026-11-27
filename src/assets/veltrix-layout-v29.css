@@ -59,3 +59,116 @@
 /* Acesso discreto ao opt-out da vitrine, sem ocupar menu nem a faixa de fotos. */
 .vel-footer-privacy{color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;opacity:.78}
 .vel-footer-privacy:hover,.vel-footer-privacy:focus-visible{opacity:1;color:#d9fff7}
+
+
+/* V3.1 — Menu agrupado, compacto e responsivo (sem novas páginas). */
+body.dashboard-page .sidebar.vel-sidebar-v31{
+  width:230px;flex:0 0 230px;
+  padding:22px 13px 22px;
+  background:linear-gradient(180deg,rgba(20,15,33,.54),rgba(13,11,27,.12));
+}
+body.dashboard-page .vel-sidebar-v31 .serverchip{
+  min-width:0;padding:9px 10px;gap:9px;
+  border-radius:13px;margin:0 0 21px;
+  background:rgba(118,80,162,.12);
+}
+body.dashboard-page .vel-sidebar-v31 .servericon{
+  flex:0 0 33px;width:33px;height:33px;font-size:16px;border-radius:9px;overflow:hidden;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-server-image{
+  width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit;
+}
+body.dashboard-page .vel-sidebar-v31 .serverchip>div:last-child{min-width:0}
+body.dashboard-page .vel-sidebar-v31 .serverchip small{
+  font-size:9px;letter-spacing:.1em;white-space:nowrap;color:#a7a2ba;
+}
+body.dashboard-page .vel-sidebar-v31 .serverchip strong{font-size:12px;max-width:154px}
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-sections{display:block}
+body.dashboard-page .vel-sidebar-v31 .vel-side-group{margin:0;min-width:0}
+body.dashboard-page .vel-sidebar-v31 .vel-side-group+.vel-side-group{
+  border-top:1px solid rgba(175,144,221,.18);
+  margin-top:15px;padding-top:15px;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-side-heading{
+  margin:0 8px 9px;
+  font-size:10px;letter-spacing:.12em;line-height:1.35;
+  font-weight:850;color:#8ce7d7;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-side-group nav{
+  display:flex;flex-direction:column;gap:2px;min-width:0;
+}
+body.dashboard-page .vel-sidebar-v31 .navlink{
+  min-height:36px;gap:10px;padding:8px 10px;
+  border-radius:9px;font-size:12px;line-height:1.25;
+  font-weight:650;color:#b4adc7;white-space:nowrap;
+}
+body.dashboard-page .vel-sidebar-v31 .navicon{
+  flex:0 0 19px;width:19px;font-size:15px;line-height:1.1;
+  text-align:center;color:#afa4ca;
+}
+body.dashboard-page .vel-sidebar-v31 .navlink:hover,
+body.dashboard-page .vel-sidebar-v31 .navlink:focus-visible{
+  color:#f7f3ff;background:rgba(176,140,241,.12);
+}
+body.dashboard-page .vel-sidebar-v31 .navlink.active,
+body.dashboard-page .vel-sidebar-v31 .navlink[aria-current="page"]{
+  color:#c6fff0;background:linear-gradient(90deg,rgba(94,211,187,.18),rgba(122,80,175,.13));
+  box-shadow:inset 3px 0 #71e3d0;
+}
+body.dashboard-page .vel-sidebar-v31 .navlink.active .navicon{color:#8ce7d7}
+body.dashboard-page .vel-sidebar-v31 .vel-side-link-label{
+  display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch{
+  display:flex;align-items:center;min-height:36px;gap:10px;
+  border-top:1px solid rgba(175,144,221,.18);
+  margin-top:15px;padding:16px 10px 0;
+  color:#ada6be;font-size:12px;font-weight:600;
+  transition:color .15s;
+}
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch:hover,
+body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch:focus-visible{
+  color:#e6fff9;text-decoration:underline;text-underline-offset:3px;
+}
+@media(min-width:1060px){
+  body.dashboard-page .sidebar.vel-sidebar-v31{
+    width:230px;flex-basis:230px;padding-inline:13px;
+  }
+}
+@media(max-width:680px){
+  body.dashboard-page .sidebar.vel-sidebar-v31{
+    width:100%;flex-basis:auto;padding:11px 13px 10px;
+  }
+  body.dashboard-page .vel-sidebar-v31 .serverchip{margin-bottom:10px;max-width:360px}
+  body.dashboard-page .vel-sidebar-v31 .vel-sidebar-sections{
+    display:flex;align-items:center;gap:12px;
+    overflow-x:auto;overflow-y:hidden;padding:0 0 8px;
+    scrollbar-width:thin;
+  }
+  body.dashboard-page .vel-sidebar-v31 .vel-side-group{
+    flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  }
+  body.dashboard-page .vel-sidebar-v31 .vel-side-group+.vel-side-group{
+    border:0;border-left:1px solid rgba(175,144,221,.2);
+    margin:0;padding:0 0 0 12px;
+  }
+  body.dashboard-page .vel-sidebar-v31 .vel-side-heading{
+    font-size:9px;margin:0;white-space:nowrap;
+  }
+  body.dashboard-page .vel-sidebar-v31 .vel-side-group nav{
+    flex-direction:row;gap:5px;overflow:visible;padding:0;
+  }
+  body.dashboard-page .vel-sidebar-v31 .navlink{
+    flex:0 0 auto;min-height:34px;padding:7px 10px;gap:6px;
+  }
+  body.dashboard-page .vel-sidebar-v31 .vel-side-link-label{overflow:visible}
+  body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch{
+    flex:0 0 auto;white-space:nowrap;margin:0;
+    padding:7px 12px;border:1px solid rgba(175,144,221,.2);
+    border-radius:9px;min-height:34px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.dashboard-page .vel-sidebar-v31 .navlink,
+  body.dashboard-page .vel-sidebar-v31 .vel-sidebar-switch{transition:none}
+}
