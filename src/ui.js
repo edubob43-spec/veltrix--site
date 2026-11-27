@@ -149,7 +149,7 @@ function sectionHtml(guild,s,section,csrf,store){
       '<div class="vel-xp-fields">'+channelPicker+'</div>'+
       bonusSection+
       '<div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>Os bônus serão aplicados após a sincronização com o bot no KataBump.</small></div>'+
-    '</form><script src="/assets/veltrix-xp-role-bonus-v34.js" defer></script>';
+    '</form>';
     return '<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>'+
       '<h1>Níveis <span class="gradient-text">& XP</span></h1><p>Configure a experiência de <strong>'+esc(name)+'</strong> sem afetar nenhum outro servidor.</p></div>'+
       '<section class="vel-xp-stats" aria-label="Resumo de XP neste servidor">'+
