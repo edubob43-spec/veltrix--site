@@ -50,7 +50,7 @@ test('painel pessoal separa servidores, perfil e economia',()=>{
   assert.ok(!daily.includes('/dashboard/123456789012345678/tickets'));
 });
 test('layout da conta e de servidor compartilha CSS atualizado',()=>{
-  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=33'));
+  assert.ok(page('Meus servidores','oi',{side:accountSidebar()}).includes('veltrix-layout-v29.css?v=34'));
   assert.match(page('Visão geral','oi',{side:sidebar(guild,'geral')}),/vel-server-sidebar-v32/);
 });
 test('menu lateral usa ícone real do servidor quando disponível',()=>{
@@ -65,28 +65,40 @@ test('menu lateral preserva emoji como fallback do ícone',()=>{
   assert.ok(html.includes('<div class="servericon">🍭</div>'));
 });
 
-test('tela de níveis distingue XP por servidor sem alterar a base de dados',()=>{
-  const a={...guild,name:'Servidor Alfa',stats:{xpProfiles:12}};
-  const b={...guild,id:'999999999999999999',name:'Servidor Beta',stats:{xpProfiles:3}};
-  const htmlA=sectionHtml(a,{...DEFAULT_SETTINGS,xpEnabled:true,xpCooldown:45},'niveis','csrfSeguro',{});
-  const htmlB=sectionHtml(b,{...DEFAULT_SETTINGS,xpEnabled:false,xpCooldown:60},'niveis','csrfSeguro',{});
-  assert.ok(htmlA.includes('action="/dashboard/'+a.id+'/save/niveis"'));
-  assert.ok(htmlB.includes('action="/dashboard/'+b.id+'/save/niveis"'));
-  assert.ok(htmlA.includes('Servidor Alfa'));
-  assert.ok(htmlB.includes('Servidor Beta'));
-  assert.ok(htmlA.includes('12</strong>'));
-  assert.ok(htmlB.includes('3</strong>'));
-  assert.ok(htmlA.includes('value="45"'));
-  assert.ok(htmlB.includes('value="60"'));
-  assert.ok(htmlA.includes('name="xpEnabled" checked'));
-  assert.ok(!htmlB.includes('name="xpEnabled" checked'));
-  assert.ok(htmlA.includes('1.000 XP'));
-  assert.ok(htmlA.includes('name="csrf" value="csrfSeguro"'));
+test('XP por mensagem: painel exibe 1 base, cargos bônus e não mostra cooldown',()=>{
+  const role1='123456789012345680',role2='123456789012345681';
+  const g={...guild,roles:{cache:new Map([[gid,{id:gid,name:'@everyone',managed:false}],[role1,{id:role1,name:'VIP',managed:false}],[role2,{id:role2,name:'Booster',managed:true}]])}};
+  const settings={...DEFAULT_SETTINGS,xpEnabled:true,xpRoleBonuses:[{roleId:role1,amount:5},{roleId:role2,amount:3}]};
+  const html=sectionHtml(g,settings,'niveis','csrfSeguro',{});
+  assert.ok(html.includes('1 XP'));
+  assert.ok(html.includes('Bônus por cargo'));
+  assert.ok(html.includes('VIP'));
+  assert.ok(html.includes('Booster'));
+  assert.ok(html.includes('Adicionar cargo'));
+  assert.ok(html.includes('veltrix-xp-role-bonus-v34.js'));
+  assert.ok(html.includes('9 XP em uma mensagem'));
+  assert.doesNotMatch(html,/name="xpCooldown"|Cooldown entre mensagens pontuadas/);
+  assert.ok(html.includes('name="csrf" value="csrfSeguro"'));
 });
-test('XP bloqueia cooldown fora do intervalo e valida canal do servidor',()=>{
-  const valid={xpEnabled:'on',xpCooldown:'60',xpChannelId:cid};
-  assert.deepEqual(validSettings('niveis',valid,guild),{xpEnabled:true,xpChannelId:cid,xpCooldown:60});
-  assert.throws(()=>validSettings('niveis',{...valid,xpCooldown:'9'},guild),/limite/);
-  assert.throws(()=>validSettings('niveis',{...valid,xpCooldown:'101'},guild),/limite/);
-  assert.throws(()=>validSettings('niveis',{...valid,xpChannelId:'987654321098765432'},guild),/Canal inválido/);
+test('XP por cargo valida e salva bônus cumulativos por servidor',()=>{
+  const role1='123456789012345680',role2='123456789012345681';
+  const g={...guild,roles:{cache:new Map([[gid,{id:gid,name:'@everyone'}],[role1,{id:role1,name:'VIP'}],[role2,{id:role2,name:'Booster'}]])}};
+  const body={xpEnabled:'on',xpChannelId:cid,xpBonusRoleId:[role1,role2],xpBonusAmount:['5','3']};
+  assert.deepEqual(validSettings('niveis',body,g),{xpEnabled:true,xpChannelId:cid,xpRoleBonuses:[{roleId:role1,amount:5},{roleId:role2,amount:3}]});
+});
+test('XP bônus aceita formulário vazio e rejeita cargo repetido, inexistente e valores inválidos',()=>{
+  const role1='123456789012345680';
+  const g={...guild,roles:{cache:new Map([[gid,{id:gid,name:'@everyone'}],[role1,{id:role1,name:'VIP'}]])}};
+  assert.deepEqual(validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:'',xpBonusAmount:''},g),{xpEnabled:true,xpChannelId:'',xpRoleBonuses:[]});
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:[role1,role1],xpBonusAmount:['5','3']},g),/cargo/);
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:role1,xpBonusAmount:'0'},g),/1 e 1.000/);
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:role1,xpBonusAmount:'1001'},g),/1 e 1.000/);
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:'123456789012345699',xpBonusAmount:'5'},g),/Cargo/);
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:role1,xpBonusAmount:''},g),/Escolha/);
+});
+test('XP bônus limita a 20 cargos configurados',()=>{
+  const roles=Array.from({length:21},(_,i)=>String(123456789012345600+i));
+  const cache=new Map([[gid,{id:gid,name:'@everyone'}],...roles.map(id=>[id,{id,name:'cargo'}])]);
+  const g={...guild,roles:{cache}};
+  assert.throws(()=>validSettings('niveis',{xpEnabled:'on',xpChannelId:'',xpBonusRoleId:roles,xpBonusAmount:roles.map(()=>1)},g),/20 cargos/);
 });

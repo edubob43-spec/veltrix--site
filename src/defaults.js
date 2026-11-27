@@ -3,7 +3,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   welcomeEnabled: false, welcomeChannelId: '', welcomeMessage: 'Bem-vindo(a), {user}, ao {server}! 💜',
   logEnabled: false, logChannelId: '',
   ticketsEnabled: true, ticketsCategoryId: '', ticketsLogChannelId: '', ticketsPanelChannelId: '', ticketsStaffRoleId: '',
-  xpEnabled: true, xpChannelId: '', xpCooldown: 60,
+  xpEnabled: true, xpChannelId: '', xpCooldown: 60, xpRoleBonuses: [],
   aiEnabled: false, aiChannelId: '', aiModel: '', aiDmEnabled: true,
   partnershipEnabled: false, partnershipReviewId: '', partnershipAnnounceId: '', partnershipPanelId: '',
   statusText: '💜 Veltrix Online'
