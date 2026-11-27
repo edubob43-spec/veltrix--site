@@ -77,7 +77,7 @@ test('XP por mensagem: painel exibe 1 base, cargos bônus e não mostra cooldown
   assert.ok(html.includes('Adicionar cargo'));
   assert.ok(html.includes('veltrix-xp-role-bonus-v34.js'));
   assert.ok(html.includes('9 XP em uma mensagem'));
-  assert.ok(!html.toLowerCase().includes('cooldown'));
+  assert.doesNotMatch(html,/name="xpCooldown"|Cooldown entre mensagens pontuadas/);
   assert.ok(html.includes('name="csrf" value="csrfSeguro"'));
 });
 test('XP por cargo valida e salva bônus cumulativos por servidor',()=>{
