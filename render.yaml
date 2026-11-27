@@ -19,3 +19,5 @@ services:
         sync: false
       - key: BRIDGE_SECRET
         sync: false
+      - key: VELTRIX_SHOWCASE_DATABASE_URL
+        sync: false
