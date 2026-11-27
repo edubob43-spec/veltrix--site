@@ -31,7 +31,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
       <svg class="vel-user-caret" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </summary>
     <nav class="vel-user-dropdown" aria-label="Menu da conta">
-      <div class="vel-menu-title"><span>✦ SUA CONTA</span><small>Conectado via Discord</small></div>
+      <div class="vel-menu-title"><span>✦ SUA CONTA</span></div>
       <a class="vel-menu-item" href="/me/daily" data-vel-menu-path="/me/daily"><span class="vel-menu-icon vel-menu-gift" aria-hidden="true">🎁</span><span class="vel-menu-copy"><strong>Daily</strong><small>Resgatar meu presente diário</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
       <a class="vel-menu-item" href="/me/perfil" data-vel-menu-path="/me/perfil"><span class="vel-menu-icon vel-menu-profile" aria-hidden="true">✦</span><span class="vel-menu-copy"><strong>Meu perfil</strong><small>Editar aparência e informações</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
       <div class="vel-menu-separator" aria-hidden="true"></div>
