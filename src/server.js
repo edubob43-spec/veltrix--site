@@ -497,7 +497,7 @@ async function guard(req,res,next){
   }catch(e){
     const section=String(req.params.section||'geral');
     const safeSection=nav.some(([k])=>k===section)?section:'geral';
-    const back=`/dashboard/${req.params.id}/${safeSection}`;
+    const back=`/dashboard/${req.params.id}/${safeSection}${req.method==='GET' && req.query.queued==='1'?'?queued=1':''}`;
     console.warn('[Guard Discord]',req.method,'status='+String(e.status||e.code||'NETWORK'));
     if(e.status===401)return res.status(401).send(page('Sessão expirada',
       '<div class="heading"><h1>Faça login novamente</h1><p>Seu acesso ao Discord expirou. Nenhuma configuração foi alterada por esta tentativa.</p></div><a class="btn" href="/auth/login">Entrar com Discord</a>',
@@ -507,7 +507,7 @@ async function guard(req,res,next){
       {user:req.session.user}));
     return res.status(503).set('Retry-After','5').send(page('Discord temporariamente indisponível',
       `<div class="heading"><div class="eyebrow">VELTRIX • CONEXÃO DISCORD</div><h1>Não conseguimos consultar o Discord agora</h1>
-       <p>A consulta falhou temporariamente. ${req.method==='GET'?'Suas configurações continuam salvas.':'A restauração ou alteração <strong>não foi enviada</strong>. Seu avatar atual permanece como está.'}</p></div>
+       <p>A consulta falhou temporariamente. ${req.method==='GET'?(req.query.queued==='1'?'Sua última solicitação pode já estar na fila. Confira o avatar no Discord antes de tentar restaurar novamente.':'Suas configurações continuam salvas.'):'Esta tentativa de restauração ou alteração <strong>não foi enviada</strong>. Seu avatar atual permanece como está.'}</p></div>
        <div class="alert">Tente novamente em alguns instantes. Se continuar acontecendo, entre novamente com Discord.</div>
        <div class="vel-actions"><a class="btn" href="${back}">↻ Tentar novamente</a><a class="btn btn-secondary" href="/dashboard">Meus servidores</a></div>`,
       {user:req.session.user}));
