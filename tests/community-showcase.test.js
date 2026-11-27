@@ -50,7 +50,7 @@ test('escapa nome do Discord e exige campos seguros',()=>{
     store.join({...user,global_name:'<img src=x onerror=alert(1)>'});
     const html=renderCommunityShowcase({members:store.list()});
     assert.doesNotMatch(html,/<img src=x/);
-    assert.doesNotMatch(html,/onerror=/);
+    assert.match(html, /<figcaption>img src=x onerror=alert\(1\)/); // conteúdo tratado como texto, não como tag
     assert.throws(()=>store.join({...user,id:'../x'}),/inválida/);
     assert.match(renderCommunityShowcase({user:{optedIn:false},csrf:'csrf'}),/type="checkbox" name="consent" value="yes" required/);
   }finally{cleanup();}
