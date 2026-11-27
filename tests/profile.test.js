@@ -10,6 +10,13 @@ test('editor só trabalha com a própria conta, e 6 banners + 4 layouts',()=>{
   assert.equal((html.match(/name="theme"/g)||[]).length,4);
   assert.doesNotMatch(html,/name="userId"|name="guildId"|Conquistas/);
 });
+test('status de salvamento pendente expõe o elemento para confirmação automática',()=>{
+  const html=renderProfileEditor({user:{id:'123456789012345678',username:'Exemplo',avatar:null},csrf:'xxxx',flags:0,connected:true,message:'Aguarde confirmação do bot.',pending:true});
+  assert.match(html,/id="pc-profile-status"/);
+  assert.match(html,/data-profile-pending="true"/);
+  assert.match(html,/veltrix-profile-status-v1\.js/);
+});
+
 test('só permite flags reais detectadas',()=>{
   const html=renderProfileEditor({user:{id:'123456789012345678',username:'Exemplo',avatar:null},csrf:'xxxx',flags:1,connected:true});
   assert.match(html,/Equipe Discord/);
