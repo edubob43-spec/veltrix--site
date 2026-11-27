@@ -43,8 +43,26 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="color-scheme" content="dark"/><meta name="theme-color" content="#100b22"/><title>${esc(title)} • Veltrix</title><style>${VELTRIX_CSS}</style><link rel="stylesheet" href="/assets/veltrix-user-menu-v28.css"/><link rel="stylesheet" href="/assets/veltrix-layout-v29.css"/>${isLanding||title==='Vitrine da comunidade'?'<link rel="stylesheet" href="/assets/veltrix-home-v30.css"/>':''}</head><body class="${isLanding?'landing-page':'dashboard-page'}">
   ${particleField}<div class="glow g1"></div><div class="glow g2"></div><div class="shell"><header class="top"><a href="/" class="brand brand-v25" aria-label="Veltrix — Início"><img class="brand-wordmark-v25" src="/assets/veltrix-wordmark-v25.webp" width="246" height="60" alt="VELTRIX"/><span class="brand-period-v25" aria-hidden="true">.</span></a>${userbar}</header><div class="layout">${side}<main class="main">${notices}${content}<footer class="vel-footer-v29" aria-label="Créditos da Veltrix"><span class="vel-footer-name">Veltrix</span><span class="vel-footer-dot" aria-hidden="true"></span><span class="vel-footer-credit">by: thwedu</span>${isLanding?'<span class="vel-footer-dot" aria-hidden="true"></span><a class="vel-footer-privacy" href="/me/vitrine">Privacidade</a>':''}</footer></main></div></div><script src="/assets/veltrix-stardust-v242.js" defer></script><script src="/assets/veltrix-user-menu-v28.js" defer></script></body></html>`;
 }
+// Sidebar em grupos, inspirado no formato de navegação por categorias.
+ // Só usa páginas já existentes. Não alterar ids/rotas das seções.
+const sidebarGroups = [
+  {id:'gerenciamento',label:'GERENCIAMENTO',sections:['geral','tickets','boasvindas','logs','niveis','parcerias','permissoes']},
+  {id:'personalizacao',label:'PERSONALIZAÇÃO',sections:['aparencia','identidade'],extras:[['/me/perfil','Meu perfil','✦']]},
+  {id:'economia',label:'ECONOMIA',sections:[],extras:[['/me/daily','Meu Daily','🎁']]}
+];
+const sidebarIcons={geral:'◈',aparencia:'✧',boasvindas:'☼',logs:'▤',tickets:'▣',niveis:'★',parcerias:'♡',permissoes:'♢',identidade:'◉'};
+const sidebarLabels = new Map(nav.map(([id,name])=>[id,name]));
 function sidebar(guild,active) {
-  return `<aside class="sidebar"><div class="serverchip"><div class="servericon">${esc(guild.name[0]||'V')}</div><div><small>SERVIDOR</small><strong>${esc(guild.name)}</strong></div></div><nav>${nav.map(([id,name])=>`<a class="navlink ${active===id?'active':''}" href="/dashboard/${guild.id}/${id}"><span class="navicon">${{geral:'◈',aparencia:'✧',boasvindas:'☼',logs:'▤',tickets:'▣',niveis:'★',parcerias:'♡',permissoes:'♢',identidade:'◉'}[id]}</span>${name}</a>`).join('')}</nav><a class="back" href="/me/daily">🎁 Meu Daily</a><a class="back" href="/me/perfil">✦ Meu perfil</a><a class="back" href="/dashboard">← Trocar de servidor</a></aside>`;
+  const base=`/dashboard/${esc(guild.id)}`;
+  const sectionLink=id=>`<a class="navlink ${active===id?'active':''}" href="${base}/${id}"${active===id?' aria-current="page"':''}><span class="navicon" aria-hidden="true">${sidebarIcons[id]}</span><span class="vel-side-link-label">${esc(sidebarLabels.get(id))}</span></a>`;
+  const groups=sidebarGroups.map(group=>`<section class="vel-side-group" aria-labelledby="vel-side-${group.id}">
+    <h2 class="vel-side-heading" id="vel-side-${group.id}">${group.label}</h2>
+    <nav aria-label="${group.label}">${group.sections.map(sectionLink).join('')}${(group.extras||[]).map(([href,label,icon])=>`<a class="navlink" href="${href}"><span class="navicon" aria-hidden="true">${icon}</span><span class="vel-side-link-label">${esc(label)}</span></a>`).join('')}</nav>
+  </section>`).join('');
+  return `<aside class="sidebar vel-sidebar-v31" aria-label="Menu de gerenciamento">
+    <div class="serverchip"><div class="servericon">${esc(guild.name[0]||'V')}</div><div><small>SERVIDOR ATUAL</small><strong title="${esc(guild.name)}">${esc(guild.name)}</strong></div></div>
+    <div class="vel-sidebar-sections">${groups}<a class="vel-sidebar-switch" href="/dashboard">← Trocar de servidor</a></div>
+  </aside>`;
 }
 function field(id,label,value,type='text',hint='',opts=null){
   if(opts){return `<label class="field"><span>${esc(label)}</span><select name="${esc(id)}">${opts.map(x=>`<option value="${esc(x.id)}" ${x.id===String(value)?'selected':''}>${esc(x.name)}</option>`).join('')}</select>${hint?`<small>${esc(hint)}</small>`:''}</label>`;}
