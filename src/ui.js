@@ -34,7 +34,7 @@ function page(title,content,{user=null,side='',flash='',active=''}={}){
       <div class="vel-menu-title"><span>✦ SUA CONTA</span></div>
       <a class="vel-menu-item" href="/me/daily" data-vel-menu-path="/me/daily"><span class="vel-menu-icon vel-menu-gift" aria-hidden="true">🎁</span><span class="vel-menu-copy"><strong>Daily</strong><small>Resgatar meu presente diário</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
       <a class="vel-menu-item" href="/me/perfil" data-vel-menu-path="/me/perfil"><span class="vel-menu-icon vel-menu-profile" aria-hidden="true">✦</span><span class="vel-menu-copy"><strong>Meu perfil</strong><small>Editar aparência e informações</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
-      <a class="vel-menu-item" href="/me/vitrine" data-vel-menu-path="/me/vitrine"><span class="vel-menu-icon vel-menu-profile" aria-hidden="true">📸</span><span class="vel-menu-copy"><strong>Minha vitrine</strong><small>Escolher exibir minha foto</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
+      <a class="vel-menu-item" href="/me/vitrine" data-vel-menu-path="/me/vitrine"><span class="vel-menu-icon vel-menu-profile" aria-hidden="true">📸</span><span class="vel-menu-copy"><strong>Minha vitrine</strong><small>Exibir ou ocultar minha foto</small></span><span class="vel-menu-arrow" aria-hidden="true">›</span></a>
       <div class="vel-menu-separator" aria-hidden="true"></div>
       <a class="vel-menu-item vel-menu-exit" href="/auth/logout"><span class="vel-menu-icon vel-menu-logout" aria-hidden="true">↪</span><span class="vel-menu-copy"><strong>Sair</strong><small>Desconectar do painel</small></span></a>
     </nav>
