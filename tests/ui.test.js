@@ -18,3 +18,11 @@ test('V3: CSS da home é carregado somente na página inicial',()=>{
  assert.match(page('Início','oi'),/veltrix-home-v30\.css/);
  assert.doesNotMatch(page('Servidores','oi'),/veltrix-home-v30\.css/);
 });
+
+test('Avatar Nitro animado usa GIF no menu da conta; estático usa PNG',()=>{
+  const id='123456789012345678', hash='0123456789abcdef0123456789abcdef';
+  const animated=page('Início','oi',{user:{id,username:'EDU',avatar:'a_'+hash}});
+  const still=page('Início','oi',{user:{id,username:'EDU',avatar:hash}});
+  assert.match(animated,new RegExp('/avatars/'+id+'/a_'+hash+'\\.gif\\?size=64'));
+  assert.match(still,new RegExp('/avatars/'+id+'/'+hash+'\\.png\\?size=64'));
+});
