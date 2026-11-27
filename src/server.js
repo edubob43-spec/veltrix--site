@@ -15,6 +15,7 @@ import { DEFAULT_SETTINGS } from './defaults.js';
 import { cleanProfile, ownedBadges } from './profile-contract.js';
 import { renderProfileEditor } from './profile-editor.js';
 import { renderDailyPage } from './daily-page.js';
+import { renderGuildAvatar } from './guild-icons.js';
 import { brDayNow, parseDailyStatus } from './daily-contract.js';
 import { tokenNeedsRefresh, refreshDiscordOAuth } from './oauth-refresh.js';
 import { VELTRIX_CSS_HASH, esc, safeId, authorized, nav, page, sidebar, sectionHtml, validSettings, errorRedirect, BOT_PERMISSIONS } from './ui.js';
@@ -389,8 +390,8 @@ app.get('/dashboard',logged,async(req,res)=>{
     const content=`<div class="heading"><div class="eyebrow">SELECIONE O SERVIDOR</div><h1>Seu espaço de <span class="gradient-text">controle.</span></h1><p>Somente servidores em que você tem permissão Gerenciar Servidor.</p></div>${!connected()?'<div class="alert">Reconectando a Veltrix no KataBump… Este painel atualizará automaticamente quando o bot responder.</div><script defer src="/assets/veltrix-sync-refresh-v26.js"></script>':''}<div class="server-grid">${list.map(g=>{
       const inside=bridge.guilds.has(g.id);
       const link=inside?`/dashboard/${g.id}/geral`:`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&permissions=${BOT_PERMISSIONS}&scope=bot%20applications.commands&guild_id=${g.id}`;
-      return `<a class="servercard" href="${link}"><span class="serveravatar">${esc(g.name[0]||'V')}</span><div><strong>${esc(g.name)}</strong><small>${inside?'● Veltrix conectada':'+ Convidar Veltrix'}</small></div><span>→</span></a>`;
-    }).join('')||'<p>Você não administra nenhum servidor disponível.</p>'}</div>`;
+      return `<a class="servercard" href="${link}">${renderGuildAvatar(g)}<div><strong>${esc(g.name)}</strong><small>${inside?'● Veltrix conectada':'+ Convidar Veltrix'}</small></div><span>→</span></a>`;
+    }).join('')||'<p>Você não administra nenhum servidor disponível.</p>'}</div><script src="/assets/veltrix-guild-icons-v1.js" defer></script>`;
     res.set('Cache-Control','no-store').send(page('Servidores',content,{user:req.session.user}));
   }catch(e){res.status(e.status===401?401:503).send(page('Conexão com Discord',`<div class="alert">${e.status===401?'Seu login expirou. Entre novamente.':'Não foi possível consultar o Discord agora. Tente atualizar em alguns instantes.'}</div><a class="btn" href="${e.status===401?'/auth/login':'/dashboard'}">${e.status===401?'Entrar novamente':'Tentar de novo'}</a>`));}
 });
