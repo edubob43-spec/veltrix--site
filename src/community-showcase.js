@@ -153,7 +153,6 @@ export function renderCommunityShowcase({ members = [], user = null } = {}) {
       '<div class="vel-community-track is-one-at-a-time' + (rotating ? ' can-rotate' : '') + '">' + cards + '</div>' +
     '</div>' +
     (rotating ? '<script src="/assets/veltrix-community-carousel-v32.js" defer></script>' : '') +
-    '<div class="vel-community-join"><a class="vel-showcase-btn secondary" href="' + (user ? '/me/vitrine' : '/auth/login?next=showcase') + '">' + (user ? 'Gerenciar minha foto' : 'Entrar e gerenciar minha foto') + '</a></div>' +
     '</section>';
 }
 
