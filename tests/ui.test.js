@@ -69,7 +69,7 @@ test('XP por mensagem: painel exibe 1 base, cargos bônus e não mostra cooldown
   const role1='123456789012345680',role2='123456789012345681';
   const g={...guild,roles:{cache:new Map([[gid,{id:gid,name:'@everyone',managed:false}],[role1,{id:role1,name:'VIP',managed:false}],[role2,{id:role2,name:'Booster',managed:true}]])}};
   const settings={...DEFAULT_SETTINGS,xpEnabled:true,xpRoleBonuses:[{roleId:role1,amount:5},{roleId:role2,amount:3}]};
-  const html=sectionHtml(g,settings,'niveis','csrfSeguro',{});
+  const html=sectionHtml(g,settings,'niveis','csrfSeguro',{supportsXpRoleBonuses:true});
   assert.ok(html.includes('1 XP'));
   assert.ok(html.includes('Bônus por cargo'));
   assert.ok(html.includes('VIP'));
@@ -80,6 +80,13 @@ test('XP por mensagem: painel exibe 1 base, cargos bônus e não mostra cooldown
   assert.doesNotMatch(html,/name="xpCooldown"|Cooldown entre mensagens pontuadas/);
   assert.ok(html.includes('name="csrf" value="csrfSeguro"'));
 });
+
+test('bridge antiga não mostra bônus de cargo e alerta que precisa atualizar',()=>{
+  const html=sectionHtml(guild,DEFAULT_SETTINGS,'niveis','csrfSeguro',{supportsXpRoleBonuses:false});
+  assert.match(html,/Bônus por cargo estão indisponíveis nesta versão do bot/);
+  assert.doesNotMatch(html,/veltrix-xp-role-bonus-v34\.js/);
+});
+
 test('XP por cargo valida e salva bônus cumulativos por servidor',()=>{
   const role1='123456789012345680',role2='123456789012345681';
   const g={...guild,roles:{cache:new Map([[gid,{id:gid,name:'@everyone'}],[role1,{id:role1,name:'VIP'}],[role2,{id:role2,name:'Booster'}]])}};
