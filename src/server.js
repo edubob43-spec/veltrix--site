@@ -232,6 +232,7 @@ app.get('/',(req,res)=>{
 app.get('/auth/login', (req,res)=>{
   if(!oauthReady())return res.status(503).send('Configure PUBLIC_URL e os dados OAuth no Render antes de entrar.');
   const state=randomBytes(24).toString('hex');req.session.oauthState=state;
+  req.session.oauthReturnTo=req.query.next==='showcase'?'/#comunidade':'/dashboard';
   req.session.save(e=>{
     if(e)return res.status(500).send('Falha ao salvar sessão.');
     const p=new URLSearchParams({client_id:clientId,redirect_uri:redirectUri,response_type:'code',scope:'identify guilds',state});
@@ -244,6 +245,7 @@ app.get('/auth/callback',async(req,res)=>{
   if(!expected||state.length!==expected.length||!timingSafeEqual(Buffer.from(state),Buffer.from(expected)))return res.status(403).send('Estado OAuth inválido. Faça login de novo.');
   if(req.query.iss && req.query.iss!=='https://discord.com')return res.status(403).send('Emissor OAuth inválido.');
   const code=String(req.query.code||'');if(!code)return res.status(400).send('Código OAuth ausente.');
+  const oauthReturnTo=req.session.oauthReturnTo==='/#comunidade'?'/#comunidade':'/dashboard';
   delete req.session.oauthState;
   try {
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
@@ -260,7 +262,7 @@ app.get('/auth/callback',async(req,res)=>{
       req.session.oauth={accessToken:token.access_token,refreshToken:token.refresh_token,expiresAt:Date.now()+(token.expires_in||3600)*1000};
       req.session.user={id:user.id,username:user.username,global_name:user.global_name,avatar:user.avatar,public_flags:Number(user.public_flags||0)};
       req.session.csrf=randomBytes(24).toString('hex');
-      req.session.save(err=>err?res.status(500).send('Erro ao salvar login.'):res.redirect('/dashboard'));
+      req.session.save(err=>err?res.status(500).send('Erro ao salvar login.'):res.redirect(oauthReturnTo));
     });
   }catch(e){console.warn('[OAuth Render]',safeError(e.message));res.status(502).send('Erro ao finalizar login do Discord. Tente novamente.');}
 });
