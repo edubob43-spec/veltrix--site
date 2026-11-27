@@ -117,7 +117,7 @@ export function renderShowcaseSettings({ configured = false, optedIn = false, cs
   const message = notice ? '<p class="vel-showcase-notice" role="status">' + escapeHtml(notice) + '</p>' : '';
   const intro = '<div class="heading"><div class="eyebrow">✦ COMUNIDADE VELTRIX</div>' +
     '<h1>Minha foto na vitrine</h1><p>Escolha se deseja exibir seu nome e avatar do Discord na página inicial para outras pessoas logadas.</p></div>';
-  const back = '<p style="margin-top:18px"><a class="btn btn-secondary" href="/">← Voltar para o início</a></p>';
+  const back = '<p class="vel-showcase-back"><a class="btn btn-secondary" href="/">← Voltar para o início</a></p>';
   if (!configured) return intro + message +
     '<div class="alert">A vitrine ainda não está ativada. Falta conectar um banco de dados persistente ao Render.</div>' + back;
   const formStart = '<form class="vel-showcase-action" method="POST" action="/me/showcase">' +
@@ -126,7 +126,7 @@ export function renderShowcaseSettings({ configured = false, optedIn = false, cs
     ? formStart + '<input type="hidden" name="showcaseAction" value="leave">' +
       '<button class="vel-showcase-btn secondary" type="submit">Remover minha foto da vitrine</button></form>'
     : formStart + '<input type="hidden" name="showcaseAction" value="join">' +
-      '<label class="vel-showcase-consent"><input type="checkbox" name="consent" value="yes" required> Autorizo exibir meu nome e minha foto do Discord publicamente nesta vitrine para pessoas logadas. Posso retirar a autorização quando quiser.</label>' +
+      '<label class="vel-showcase-consent"><input type="checkbox" name="consent" value="yes" required> Autorizo exibir meu nome e minha foto do Discord na vitrine visível a pessoas logadas. Posso retirar a autorização quando quiser.</label>' +
       '<button class="vel-showcase-btn" type="submit">✦ Participar da vitrine</button></form>';
-  return '<div class="panel" style="max-width:720px;padding:24px">' + intro + message + form + back + '</div>';
+  return '<div class="panel vel-showcase-settings">' + intro + message + form + back + '</div>';
 }
