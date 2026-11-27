@@ -124,6 +124,7 @@ function sectionHtml(guild,s,section,csrf,store){
     const channelOptions=[{id:'',name:'Não enviar avisos'},...textCh.filter(ch=>ch.id)];
     const channelPicker=field('xpChannelId','Canal dos avisos de nível',s.xpChannelId,'text','Deixe sem canal para não enviar anúncios.',channelOptions);
     const name=String(guild.name||'Servidor').trim();
+    const supportsXpRoleBonuses=store?.supportsXpRoleBonuses===true;
     const configured=Array.isArray(s.xpRoleBonuses)?s.xpRoleBonuses.filter(x=>x&&/^\d{17,20}$/.test(String(x.roleId||''))&&Number.isInteger(x.amount)&&x.amount>=1&&x.amount<=1000).slice(0,20):[];
     const roleOptions=[{id:'',name:'— Selecionar cargo —'},...([...guild.roles.cache.values()].filter(r=>r.id!==guild.id).sort((a,b)=>a.name.localeCompare(b.name)).map(r=>({id:r.id,name:'@ '+r.name+(r.managed?' · integrado':'')})))];
     const renderBonusRow=(roleId='',amount='')=>{
@@ -137,16 +138,16 @@ function sectionHtml(guild,s,section,csrf,store){
         '<button type="button" class="btn btn-secondary vel-xp-bonus-remove" data-xp-bonus-remove aria-label="Remover este bônus">Remover</button></div>';
     };
     const rows=(configured.length?configured:[{}]).map(x=>renderBonusRow(x.roleId||'',x.amount??'')).join('');
+    const bonusSection=supportsXpRoleBonuses?'<section class="vel-xp-bonus-section" aria-labelledby="vel-xp-bonus-title">'+
+        '<div class="vel-xp-bonus-head"><div><h3 id="vel-xp-bonus-title">Bônus por cargo</h3><p>1 XP base por mensagem válida. Quem tiver cargos configurados ganha o bônus de cada cargo; eles acumulam.</p></div><span class="vel-xp-bonus-limit" id="vel-xp-bonus-count">'+configured.length+'/20</span></div>'+
+        '<div class="vel-xp-bonus-list" id="vel-xp-bonus-list">'+rows+'</div>'+
+        '<button type="button" class="btn btn-secondary vel-xp-bonus-add" id="vel-xp-bonus-add">＋ Adicionar cargo</button>'+
+        '<template id="vel-xp-bonus-template">'+renderBonusRow('','')+'</template></section><script src="/assets/veltrix-xp-role-bonus-v34.js" defer></script>':'<section class="vel-xp-bonus-section"><p class="alert">Bônus por cargo estão indisponíveis nesta versão do bot. Atualize o bridge no KataBump para ativar esse recurso.</p></section>';
     const form='<form method="POST" action="/dashboard/'+esc(guild.id)+'/save/niveis" class="config-form vel-xp-config-form">'+
       '<input type="hidden" name="csrf" value="'+esc(csrf)+'"/>'+
       '<label class="switch vel-xp-enabled"><span><strong>Ativar experiência por mensagens</strong><small>O XP deste servidor é independente do XP de outros servidores.</small></span><input type="checkbox" name="xpEnabled" '+(status?'checked':'')+'/><i></i></label>'+
       '<div class="vel-xp-fields">'+channelPicker+'</div>'+
-      '<section class="vel-xp-bonus-section" aria-labelledby="vel-xp-bonus-title">'+
-        '<div class="vel-xp-bonus-head"><div><h3 id="vel-xp-bonus-title">Bônus por cargo</h3><p>1 XP base por mensagem válida. Quem tiver cargos configurados ganha o bônus de cada cargo; eles acumulam.</p></div><span class="vel-xp-bonus-limit" id="vel-xp-bonus-count">'+configured.length+'/20</span></div>'+
-        '<div class="vel-xp-bonus-list" id="vel-xp-bonus-list">'+rows+'</div>'+
-        '<button type="button" class="btn btn-secondary vel-xp-bonus-add" id="vel-xp-bonus-add">＋ Adicionar cargo</button>'+
-        '<template id="vel-xp-bonus-template">'+renderBonusRow('','')+'</template>'+
-      '</section>'+
+      bonusSection+
       '<div class="form-actions"><button class="btn" type="submit">✦ Salvar XP deste servidor</button><small>Os bônus serão aplicados após a sincronização com o bot no KataBump.</small></div>'+
     '</form><script src="/assets/veltrix-xp-role-bonus-v34.js" defer></script>';
     return '<div class="heading vel-xp-heading"><div class="eyebrow">EXPERIÊNCIA / CONFIGURAÇÃO DO SERVIDOR</div>'+
